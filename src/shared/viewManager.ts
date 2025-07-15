@@ -338,7 +338,7 @@ try {
         try {
           console.log('🏗️ Attempting legacy Bridge component loading');
 
-          // Try requireNativeComponent directly
+          // Now that iOS exports as 'RCTNavView', we can use the consistent name
           RCTNavView = requireNativeComponent('RCTNavView');
           componentLoadingStrategy = 'legacy-bridge';
           console.log('✅ Successfully loaded legacy RCTNavView component');
@@ -349,10 +349,10 @@ try {
             String(legacyError)
           );
 
-          // Try alternative name for iOS Legacy Bridge
+          // Try alternative name for iOS Legacy Bridge as fallback
           if (Platform.OS === 'ios') {
             try {
-              console.log('🔄 Trying iOS-specific view manager name');
+              console.log('🔄 Trying iOS fallback: RCTNavViewManager');
               RCTNavView = requireNativeComponent('RCTNavViewManager');
               componentLoadingStrategy = 'legacy-bridge-ios-alt';
               console.log('✅ Successfully loaded RCTNavViewManager component');
