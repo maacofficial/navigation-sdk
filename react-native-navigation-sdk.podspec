@@ -34,7 +34,7 @@ Pod::Spec.new do |s|
 
   # Don't install the dependencies when we run `pod install` in the old architecture.
   if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
-    s.source_files += ", build/generated/ios/**/*.{h,mm,cpp}"
+    s.source_files = "ios/react-native-navigation-sdk/*.{h,m,mm}, build/generated/ios/**/*.{h,mm,cpp}"
   end
 
   s.dependency "React-Core"
