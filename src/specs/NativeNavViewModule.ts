@@ -19,17 +19,17 @@ import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
   recenter(): Promise<void>;
-  
+
   followMyLocation(perspective: number): Promise<void>;
-  
+
   isMyLocationEnabled(): Promise<boolean>;
-  
+
   setMyLocationEnabled(enabled: boolean): Promise<void>;
-  
+
   getMapType(): Promise<number>;
-  
+
   setMapType(mapType: number): Promise<void>;
-  
+
   moveCamera(
     latitude: number,
     longitude: number,
@@ -37,7 +37,7 @@ export interface Spec extends TurboModule {
     bearing?: number,
     tilt?: number
   ): Promise<void>;
-  
+
   animateCamera(
     latitude: number,
     longitude: number,
@@ -46,50 +46,50 @@ export interface Spec extends TurboModule {
     tilt?: number,
     duration?: number
   ): Promise<void>;
-  
+
   getCameraPosition(): Promise<Object>;
-  
+
   setMapStyle(styleJson: string): Promise<boolean>;
-  
+
   setDestinationMarkerIcon(
     icon: Object | null,
     imagePixelRatio?: number
   ): Promise<boolean>;
-  
+
   enableNavigationHeaderTouchEvents(enable: boolean): Promise<void>;
-  
+
   enableNavigationFooterTouchEvents(enable: boolean): Promise<void>;
-  
+
   enableTrafficLayer(enable: boolean): Promise<void>;
-  
+
   isNavigationTripProgressBarEnabled(): Promise<boolean>;
-  
+
   setNavigationTripProgressBarEnabled(enabled: boolean): Promise<void>;
-  
+
   isNavigationHeaderEnabled(): Promise<boolean>;
-  
+
   setNavigationHeaderEnabled(enabled: boolean): Promise<void>;
-  
+
   isNavigationFooterEnabled(): Promise<boolean>;
-  
+
   setNavigationFooterEnabled(enabled: boolean): Promise<void>;
-  
+
   isRecenterButtonEnabled(): Promise<boolean>;
-  
+
   setRecenterButtonEnabled(enabled: boolean): Promise<void>;
-  
+
   isSpeedLimitIconEnabled(): Promise<boolean>;
-  
+
   setSpeedLimitIconEnabled(enabled: boolean): Promise<void>;
-  
+
   isSpeedometerEnabled(): Promise<boolean>;
-  
+
   setSpeedometerEnabled(enabled: boolean): Promise<void>;
-  
+
   isTrafficIncidentCardsEnabled(): Promise<boolean>;
-  
+
   setTrafficIncidentCardsEnabled(enabled: boolean): Promise<void>;
-  
+
   setStylingOptions(options: Object): Promise<void>;
 }
 

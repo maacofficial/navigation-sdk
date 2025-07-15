@@ -16,12 +16,12 @@
 
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 import type { ViewProps } from 'react-native';
-import type { 
+import type {
   DirectEventHandler,
   Double,
   Float,
   Int32,
-  WithDefault
+  WithDefault,
 } from 'react-native/Libraries/Types/CodegenTypes';
 
 interface CameraPosition {
@@ -111,7 +111,7 @@ interface MapViewCallbacks {
 export interface NativeProps extends ViewProps, MapViewCallbacks {
   // Camera properties
   initialCamera?: CameraPosition;
-  
+
   // Map properties
   mapType?: WithDefault<Int32, 1>; // 1 = NORMAL, 2 = SATELLITE, 3 = TERRAIN, 4 = HYBRID
   myLocationEnabled?: WithDefault<boolean, false>;
@@ -122,8 +122,8 @@ export interface NativeProps extends ViewProps, MapViewCallbacks {
   tiltGesturesEnabled?: WithDefault<boolean, true>;
   rotateGesturesEnabled?: WithDefault<boolean, true>;
   scrollGesturesDuringRotateOrZoomEnabled?: WithDefault<boolean, true>;
-  
-  // Navigation UI properties  
+
+  // Navigation UI properties
   navigationTripProgressBarEnabled?: WithDefault<boolean, true>;
   navigationHeaderEnabled?: WithDefault<boolean, true>;
   navigationFooterEnabled?: WithDefault<boolean, true>;
@@ -131,14 +131,14 @@ export interface NativeProps extends ViewProps, MapViewCallbacks {
   speedLimitIconEnabled?: WithDefault<boolean, true>;
   speedometerEnabled?: WithDefault<boolean, true>;
   trafficIncidentCardsEnabled?: WithDefault<boolean, true>;
-  
+
   // Traffic
   trafficEnabled?: WithDefault<boolean, false>;
-  
+
   // Styling
   stylingOptions?: StylingOptions;
   mapStyle?: string;
-  
+
   // Header/Footer touch events
   navigationHeaderTouchEventsEnabled?: WithDefault<boolean, false>;
   navigationFooterTouchEventsEnabled?: WithDefault<boolean, false>;

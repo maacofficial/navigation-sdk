@@ -5,7 +5,7 @@ module.exports = {
     type: 'modules',
     jsSrcsDir: 'src/specs',
     android: {
-      javaPackageName: 'com.google.android.react.navsdk'
-    }
-  }
+      javaPackageName: 'com.google.android.react.navsdk',
+    },
+  },
 };

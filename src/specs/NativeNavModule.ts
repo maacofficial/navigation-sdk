@@ -22,71 +22,71 @@ export interface Spec extends TurboModule {
     termsAndConditionsDialogOptions: Object,
     taskRemovedBehavior: number
   ): Promise<boolean>;
-  
+
   cleanup(): Promise<void>;
-  
+
   setDestination(
     waypoint: Object,
     routingOptions?: Object,
     displayOptions?: Object
   ): Promise<number>;
-  
+
   setDestinations(
     waypoints: Array<Object>,
     routingOptions?: Object,
     displayOptions?: Object
   ): Promise<number>;
-  
+
   clearDestinations(): Promise<void>;
-  
+
   startGuidance(): Promise<void>;
-  
+
   stopGuidance(): Promise<void>;
-  
+
   startNavigation(): Promise<void>;
-  
+
   stopNavigation(): Promise<void>;
-  
+
   getContinueToWaypoint(): Promise<boolean>;
-  
+
   getCurrentTimeAndDistance(): Promise<Object>;
-  
+
   getRouteSegments(): Promise<Array<Object>>;
-  
+
   getTraveledPath(): Promise<Array<Object>>;
-  
+
   getCurrentRouteSegment(): Promise<Object>;
-  
+
   enableTurnByTurnUpdatesForAndroidAuto(): Promise<void>;
-  
+
   disableTurnByTurnUpdatesForAndroidAuto(): Promise<void>;
-  
+
   pauseNavigation(): Promise<void>;
-  
+
   resumeNavigation(): Promise<void>;
-  
+
   setTaskRemovedBehavior(behavior: number): Promise<void>;
-  
+
   setAudioGuidance(audioGuidance: Object): Promise<void>;
-  
+
   setSpeedAlertOptions(speedAlertOptions: Object): Promise<void>;
-  
+
   allowBackgroundLocationUpdates(allow: boolean): Promise<void>;
-  
+
   startLocationSimulation(): Promise<void>;
-  
+
   pauseLocationSimulation(): Promise<void>;
-  
+
   resumeLocationSimulation(): Promise<void>;
-  
+
   stopLocationSimulation(): Promise<void>;
-  
+
   setUserLocation(location: Object): Promise<void>;
-  
+
   removeUserLocation(): Promise<void>;
-  
+
   setLocationSimulationOptions(options: Object): Promise<void>;
-  
+
   setLogDebugInfoToConsole(enabled: boolean): Promise<void>;
 }
 

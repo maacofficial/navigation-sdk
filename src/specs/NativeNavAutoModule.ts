@@ -19,11 +19,11 @@ import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
   initializeNavAuto(): Promise<boolean>;
-  
+
   cleanup(): Promise<void>;
-  
+
   showTermsAndConditionsDialog(): Promise<void>;
-  
+
   areTermsAccepted(): Promise<boolean>;
 }
 

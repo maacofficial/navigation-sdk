@@ -40,6 +40,9 @@ const isViewManagerRegistered = (name: string): boolean => {
   }
 };
 
+// Global component registry to prevent dual registration
+const componentRegistry = new Map<string, any>();
+
 try {
   // First, check what's already registered to avoid conflicts
   const registeredManagers = {
@@ -50,55 +53,86 @@ try {
 
   console.log('📋 Registered view managers:', registeredManagers);
 
-  // Check if we're in New Architecture mode
-  const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
-  isNewArchitecture = TurboModuleRegistry != null;
+  // Check if we already have this component cached
+  if (componentRegistry.has('RCTNavView')) {
+    RCTNavView = componentRegistry.get('RCTNavView');
+    componentLoadingStrategy = 'cached-component';
+    console.log('✅ Using cached RCTNavView component');
+  } else {
+    // Check if we're in New Architecture mode
+    const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
+    isNewArchitecture = TurboModuleRegistry != null;
 
-  console.log(
-    '🏗️ Architecture mode:',
-    isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
-  );
+    console.log(
+      '🏗️ Architecture mode:',
+      isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
+    );
 
-  if (isNewArchitecture) {
-    // Try to use New Architecture component first
-    try {
-      const {
-        RCTNavView: ImportedRCTNavView,
-      } = require('../specs/NativeComponents');
-      RCTNavView = ImportedRCTNavView;
-      componentLoadingStrategy = 'new-architecture-fabric';
-      console.log('✅ Using New Architecture Fabric component');
-    } catch (newArchError) {
-      console.log(
-        '❌ New Architecture component import failed:',
-        String(newArchError)
-      );
-      isNewArchitecture = false;
-    }
-  }
-
-  // If New Architecture failed or not available, use legacy approach
-  if (!isNewArchitecture) {
-    // Check if RCTNavView is already registered by someone else
-    if (registeredManagers.RCTNavView) {
-      console.log('⚠️ RCTNavView already registered, creating wrapper...');
-      // Don't call requireNativeComponent again, just reference the existing one
-      RCTNavView = UIManager.getViewManagerConfig('RCTNavView');
-      componentLoadingStrategy = 'existing-registration';
-    } else {
-      // Safe to register the legacy component
+    if (isNewArchitecture) {
+      // Try to use New Architecture component first
       try {
-        RCTNavView = requireNativeComponent('RCTNavView');
-        componentLoadingStrategy = 'legacy-bridge';
-        console.log('✅ Registered new legacy RCTNavView component');
-      } catch (legacyError) {
-        console.error(
-          '❌ Failed to register legacy component:',
-          String(legacyError)
+        const {
+          RCTNavView: ImportedRCTNavView,
+        } = require('../specs/NativeComponents');
+        RCTNavView = ImportedRCTNavView;
+        componentLoadingStrategy = 'new-architecture-fabric';
+        console.log('✅ Using New Architecture Fabric component');
+        componentRegistry.set('RCTNavView', RCTNavView);
+      } catch (newArchError) {
+        console.log(
+          '❌ New Architecture component import failed:',
+          String(newArchError)
         );
-        // Create a minimal fallback
-        RCTNavView = () => null;
-        componentLoadingStrategy = 'fallback-dummy';
+        isNewArchitecture = false;
+      }
+    }
+
+    // If New Architecture failed or not available, use legacy approach
+    if (!isNewArchitecture) {
+      // Check if RCTNavView is already registered by native side
+      if (registeredManagers.RCTNavView) {
+        console.log(
+          '⚠️ RCTNavView already registered, avoiding dual registration...'
+        );
+        // Create a direct reference to avoid requireNativeComponent call
+        try {
+          // Try to get the existing component from React Native's internal registry
+          const NativeComponentRegistry = require('react-native/Libraries/NativeComponent/NativeComponentRegistry');
+          RCTNavView = NativeComponentRegistry.get('RCTNavView', () => ({
+            uiViewClassName: 'RCTNavView',
+            validAttributes: {},
+            directEventTypes: {},
+            bubblingEventTypes: {},
+          }));
+          componentLoadingStrategy = 'existing-registration-reuse';
+          console.log('✅ Reusing existing RCTNavView registration');
+        } catch (registryError) {
+          console.log(
+            '❌ Could not reuse existing registration:',
+            String(registryError)
+          );
+          // Fallback to minimal component
+          RCTNavView = () => null;
+          componentLoadingStrategy = 'legacy-bridge-fallback';
+        }
+        componentRegistry.set('RCTNavView', RCTNavView);
+      } else {
+        // Safe to register the legacy component
+        try {
+          RCTNavView = requireNativeComponent('RCTNavView');
+          componentLoadingStrategy = 'legacy-bridge';
+          console.log('✅ Registered new legacy RCTNavView component');
+          componentRegistry.set('RCTNavView', RCTNavView);
+        } catch (legacyError) {
+          console.error(
+            '❌ Failed to register legacy component:',
+            String(legacyError)
+          );
+          // Create a minimal fallback
+          RCTNavView = () => null;
+          componentLoadingStrategy = 'fallback-dummy';
+          componentRegistry.set('RCTNavView', RCTNavView);
+        }
       }
     }
   }
@@ -109,6 +143,7 @@ try {
 
   // Last resort fallback
   RCTNavView = () => null;
+  componentRegistry.set('RCTNavView', RCTNavView);
 }
 
 console.log('🎯 Final component loading strategy:', componentLoadingStrategy);
