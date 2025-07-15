@@ -27,22 +27,61 @@ import type { Circle, GroundOverlay, Marker, Polygon, Polyline } from '../maps';
 
 // Safely import New Architecture component with fallback
 let RCTNavView: any;
+let isNewArchitecture = false;
+
 try {
-  const {
-    RCTNavView: ImportedRCTNavView,
-  } = require('../specs/NativeComponents');
-  RCTNavView = ImportedRCTNavView;
+  // Check if we're in New Architecture mode
+  const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
+  isNewArchitecture = TurboModuleRegistry != null;
+
+  if (isNewArchitecture) {
+    // Try to use New Architecture component
+    try {
+      const {
+        RCTNavView: ImportedRCTNavView,
+      } = require('../specs/NativeComponents');
+      RCTNavView = ImportedRCTNavView;
+      console.log('Using New Architecture RCTNavView component');
+    } catch (newArchError) {
+      console.log(
+        'New Architecture component import failed, falling back to legacy'
+      );
+      isNewArchitecture = false;
+    }
+  }
+
+  if (!isNewArchitecture) {
+    // Use legacy component
+    RCTNavView = requireNativeComponent('RCTNavView');
+    console.log('Using legacy RCTNavView component');
+  }
 } catch (error) {
-  // Fallback to legacy requireNativeComponent if New Architecture components are not available
-  console.log(
-    'New Architecture components not available, using legacy component'
-  );
+  // Final fallback to legacy
+  console.log('Fallback to legacy RCTNavView component due to error:', error);
   RCTNavView = requireNativeComponent('RCTNavView');
+  isNewArchitecture = false;
 }
 
 // NavViewManager is responsible for managing both the regular map fragment as well as the navigation map view fragment.
-export const viewManagerName =
-  Platform.OS === 'android' ? 'NavViewManager' : 'RCTNavView';
+// Use different view manager names for different architectures to avoid registration conflicts
+export const viewManagerName = (() => {
+  if (Platform.OS === 'android') {
+    return 'NavViewManager';
+  } else {
+    // iOS: For legacy bridge, the view manager is registered as 'RCTNavViewManager'
+    // For New Architecture (Fabric), it should use the component name from specs
+    return isNewArchitecture ? 'RCTNavView' : 'RCTNavViewManager';
+  }
+})();
+
+// Also provide the alternative names for debugging
+export const alternativeViewManagerNames = (() => {
+  if (Platform.OS === 'android') {
+    return ['NavViewManager'];
+  } else {
+    return ['RCTNavViewManager', 'RCTNavView', 'NavView'];
+  }
+})();
 
 export const sendCommand = (
   viewId: number,
@@ -70,13 +109,38 @@ export const sendCommand = (
 };
 
 export const commands = (() => {
+  // Try to get commands from the primary view manager name
+  let config = null;
+  let foundViewManagerName = viewManagerName;
+
   try {
-    const config = UIManager.getViewManagerConfig(viewManagerName);
+    config = UIManager.getViewManagerConfig(viewManagerName);
+
+    // If primary name doesn't work, try alternatives
+    if (!config || !config.Commands) {
+      for (const altName of alternativeViewManagerNames) {
+        try {
+          const altConfig = UIManager.getViewManagerConfig(altName);
+          if (altConfig && altConfig.Commands) {
+            config = altConfig;
+            foundViewManagerName = altName;
+            console.log(
+              `Using view manager: ${altName} instead of ${viewManagerName}`
+            );
+            break;
+          }
+        } catch (altError) {
+          // Continue trying other names
+        }
+      }
+    }
+
     if (config && config.Commands) {
+      console.log(`Successfully loaded commands from ${foundViewManagerName}`);
       return config.Commands;
     } else {
       console.warn(
-        `ViewManager config not found for ${viewManagerName}, using fallback commands`
+        `ViewManager config not found for ${viewManagerName} or alternatives, using fallback commands`
       );
       // Fallback commands based on known command structure
       return {
@@ -167,11 +231,19 @@ export interface NativeNavViewProps extends ViewProps {
 type NativeNavViewManagerComponentType = HostComponent<NativeNavViewProps>;
 export const NavViewManager = RCTNavView as NativeNavViewManagerComponentType;
 
+// Export architecture detection for use in other modules
+export { isNewArchitecture };
+
 // Debug function to check view manager registration
 export const debugViewManager = () => {
   console.log('View Manager Debug Info:');
   console.log('Platform:', Platform.OS);
+  console.log(
+    'Architecture:',
+    isNewArchitecture ? 'New Architecture (Fabric)' : 'Legacy Bridge'
+  );
   console.log('View Manager Name:', viewManagerName);
+  console.log('RCTNavView Component Type:', typeof RCTNavView);
 
   try {
     const config = UIManager.getViewManagerConfig(viewManagerName);
@@ -182,6 +254,22 @@ export const debugViewManager = () => {
       console.log('Config keys:', Object.keys(config));
     } else {
       console.log('View Manager Config is null/undefined');
+
+      // Try alternative view manager names
+      console.log('Trying alternative view manager names...');
+
+      for (const altName of alternativeViewManagerNames) {
+        try {
+          const altConfig = UIManager.getViewManagerConfig(altName);
+          if (altConfig) {
+            console.log(`Found config for ${altName}:`, altConfig);
+          } else {
+            console.log(`No config found for ${altName}`);
+          }
+        } catch (altError) {
+          console.log(`Error getting config for ${altName}:`, altError);
+        }
+      }
     }
   } catch (error) {
     console.log('Error getting view manager config:', error);
