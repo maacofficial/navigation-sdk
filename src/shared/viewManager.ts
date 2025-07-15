@@ -244,6 +244,30 @@ function createLegacyFallbackComponent() {
 
 console.log('🎯 Final component loading strategy:', componentLoadingStrategy);
 
+// Add startup debugging information
+console.log('🔬 Navigation SDK Startup Debug Info:');
+console.log('  📱 Platform:', Platform.OS);
+console.log(
+  '  🏗️ Architecture:',
+  isNewArchitecture ? 'New Architecture (Fabric)' : 'Legacy Bridge'
+);
+console.log('  📦 Component Strategy:', componentLoadingStrategy);
+console.log('  🎯 Component Type:', typeof RCTNavView);
+console.log('  📊 Component Registry Size:', componentRegistry.size);
+
+// Try to check if the native module is properly linked
+try {
+  const config = UIManager.getViewManagerConfig('RCTNavView');
+  if (config) {
+    console.log('  ✅ Native view config found');
+    console.log('  🔧 Available commands:', Object.keys(config.Commands || {}));
+  } else {
+    console.log('  ⚠️ No native view config found');
+  }
+} catch (error) {
+  console.log('  ❌ Error checking native view config:', String(error));
+}
+
 // Add specific debugging for New Architecture component issues
 if (
   isNewArchitecture &&
