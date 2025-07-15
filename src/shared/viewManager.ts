@@ -30,29 +30,13 @@ let RCTNavView: any;
 let isNewArchitecture = false;
 let componentLoadingStrategy = 'unknown';
 
-// Function to check if a view manager is already registered
-const isViewManagerRegistered = (name: string): boolean => {
-  if (isNewArchitectureAvailable()) {
-    // In New Architecture, Fabric components are registered differently
-    // We can't rely on UIManager.getViewManagerConfig for Fabric components
-    console.log(`🔍 Checking Fabric component availability for ${name}`);
-    return true; // Assume available if we're in New Architecture
-  } else {
-    // Legacy Bridge architecture
-    try {
-      const config = UIManager.getViewManagerConfig(name);
-      return config != null;
-    } catch {
-      return false;
-    }
-  }
-};
-
 // Function to check if we're in New Architecture mode
 const isNewArchitectureAvailable = (): boolean => {
   try {
+    // Check for Fabric/TurboModules availability
     const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
-    return TurboModuleRegistry != null;
+    const RCTNewArchitectureValidation = require('react-native/Libraries/NewArchitecture/RCTNewArchitectureValidation');
+    return TurboModuleRegistry != null && RCTNewArchitectureValidation != null;
   } catch {
     return false;
   }
@@ -63,33 +47,12 @@ const componentRegistry = new Map<string, any>();
 
 try {
   // Check architecture mode first
-  const isNewArchitectureMode = isNewArchitectureAvailable();
+  isNewArchitecture = isNewArchitectureAvailable();
 
-  // In New Architecture, Fabric components don't register with UIManager
-  // So we need different detection logic
-  let registeredManagers;
-
-  if (isNewArchitectureMode) {
-    // In New Architecture, we assume Fabric components are available if specs exist
-    registeredManagers = {
-      RCTNavView: false, // Fabric components don't show up in UIManager
-      RCTNavViewManager: false,
-      NavViewManager: false,
-      NewArchitecture: true,
-      FabricComponentsAvailable: true, // We'll verify this through successful imports
-    };
-  } else {
-    // Legacy architecture - check actual UIManager registrations
-    registeredManagers = {
-      RCTNavView: isViewManagerRegistered('RCTNavView'),
-      RCTNavViewManager: isViewManagerRegistered('RCTNavViewManager'),
-      NavViewManager: isViewManagerRegistered('NavViewManager'),
-      NewArchitecture: false,
-      FabricComponentsAvailable: false,
-    };
-  }
-
-  console.log('📋 Registered view managers:', registeredManagers);
+  console.log(
+    '🏗️ Architecture mode:',
+    isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
+  );
 
   // Check if we already have this component cached
   if (componentRegistry.has('RCTNavView')) {
@@ -97,24 +60,12 @@ try {
     componentLoadingStrategy = 'cached-component';
     console.log('✅ Using cached RCTNavView component');
   } else {
-    // Use the architecture detection we already did
-    isNewArchitecture = isNewArchitectureMode;
-
-    console.log(
-      '🏗️ Architecture mode:',
-      isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
-    );
-
-    // Skip the complex registration detection and go straight to component loading
-    // Since we fixed the iOS native module export name, we should be able to load it directly
-
     if (isNewArchitecture) {
       // For New Architecture, try codegen first
       try {
         // Import the codegen component directly
-        const {
-          default: RCTNavViewCodegen,
-        } = require('../specs/RCTNavViewNativeComponent');
+        const RCTNavViewCodegen =
+          require('../specs/RCTNavViewNativeComponent').default;
 
         console.log(`🔍 Codegen component type: ${typeof RCTNavViewCodegen}`);
 
@@ -124,26 +75,6 @@ try {
           componentLoadingStrategy = 'new-architecture-codegen';
           console.log('✅ Using New Architecture codegen component');
           componentRegistry.set('RCTNavView', RCTNavView);
-        } else if (typeof RCTNavViewCodegen === 'string') {
-          // If codegen returns a string, it means codegen didn't run properly
-          // Fall back to requireNativeComponent which should work for both architectures
-          console.log(`🔍 Codegen returned string: ${RCTNavViewCodegen}`);
-
-          try {
-            // Use requireNativeComponent as fallback - this will work in both architectures
-            RCTNavView = requireNativeComponent(RCTNavViewCodegen);
-            componentLoadingStrategy = 'new-architecture-require-fallback';
-            console.log(
-              '✅ Using requireNativeComponent fallback for New Architecture'
-            );
-            componentRegistry.set('RCTNavView', RCTNavView);
-          } catch (requireError) {
-            console.log(
-              '❌ requireNativeComponent fallback failed:',
-              String(requireError)
-            );
-            throw requireError;
-          }
         } else {
           throw new Error(
             `Unexpected codegen type: ${typeof RCTNavViewCodegen}`
@@ -162,9 +93,9 @@ try {
       try {
         console.log('🏗️ Attempting legacy Bridge component loading');
 
-        // iOS exports as 'RCTNavViewManager' by default
+        // iOS exports as 'RCTNavViewManager' by default in Legacy Bridge
         const componentName =
-          Platform.OS === 'ios' ? 'RCTNavViewManager' : 'RCTNavView';
+          Platform.OS === 'ios' ? 'RCTNavViewManager' : 'NavViewManager';
         RCTNavView = requireNativeComponent(componentName);
         componentLoadingStrategy = 'legacy-bridge';
         console.log(`✅ Successfully loaded legacy ${componentName} component`);
@@ -175,27 +106,8 @@ try {
           String(legacyError)
         );
 
-        // Try alternative name for iOS Legacy Bridge as fallback
-        if (Platform.OS === 'ios') {
-          try {
-            console.log('🔄 Trying iOS fallback: RCTNavView');
-            RCTNavView = requireNativeComponent('RCTNavView');
-            componentLoadingStrategy = 'legacy-bridge-ios-alt';
-            console.log('✅ Successfully loaded RCTNavView component');
-            componentRegistry.set('RCTNavView', RCTNavView);
-          } catch (iosError) {
-            console.log(
-              '❌ iOS alternative requireNativeComponent failed:',
-              String(iosError)
-            );
-
-            // Create fallback component
-            createLegacyFallbackComponent();
-          }
-        } else {
-          // Create fallback component for other platforms
-          createLegacyFallbackComponent();
-        }
+        // Create fallback component
+        createLegacyFallbackComponent();
       }
     }
   }
@@ -300,8 +212,8 @@ export const viewManagerName = (() => {
   if (Platform.OS === 'android') {
     return 'NavViewManager';
   } else {
-    // iOS: The class RCTNavViewManager exports as 'RCTNavViewManager' by default
-    return 'RCTNavViewManager';
+    // iOS: In New Architecture use the actual component name, in Legacy use the manager name
+    return isNewArchitecture ? 'RCTNavView' : 'RCTNavViewManager';
   }
 })();
 
@@ -310,8 +222,10 @@ export const alternativeViewManagerNames = (() => {
   if (Platform.OS === 'android') {
     return ['NavViewManager'];
   } else {
-    // iOS: Primary is RCTNavViewManager, keep RCTNavView as fallback
-    return ['RCTNavView', 'NavView'];
+    // iOS: Provide both names as alternatives
+    return isNewArchitecture
+      ? ['RCTNavViewManager', 'NavView']
+      : ['RCTNavView', 'NavView'];
   }
 })();
 

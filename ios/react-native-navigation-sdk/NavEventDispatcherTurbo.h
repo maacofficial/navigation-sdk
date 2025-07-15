@@ -14,29 +14,17 @@
  * limitations under the License.
  */
 
-#import "RNNavigationSdkComponentsProvider.h"
+#import <Foundation/Foundation.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
-#import "RCTNavViewComponentView.h"
-#import <React/RCTComponentViewFactory.h>
-#endif
+#import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
 
-@implementation RNNavigationSdkComponentsProvider
+NS_ASSUME_NONNULL_BEGIN
 
-#ifdef RCT_NEW_ARCH_ENABLED
-+ (NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
-{
-  return @{
-    @"RCTNavView": RCTNavViewComponentView.class,
-  };
-}
-
-// Register components with React Native
-+ (void)load
-{
-  // Register the component with Fabric
-  [RCTComponentViewFactory.currentComponentViewFactory registerComponentViewClass:RCTNavViewComponentView.class forName:@"RCTNavView"];
-}
-#endif
+@interface NavEventDispatcherTurbo : NSObject <NativeEventDispatcherSpec>
 
 @end
+
+NS_ASSUME_NONNULL_END
+
+#endif

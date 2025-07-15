@@ -19,7 +19,16 @@
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <React/RCTViewComponentView.h>
 #import <UIKit/UIKit.h>
+
+// Import the generated spec headers from the correct location
+#ifdef RCT_NEW_ARCH_ENABLED
+#ifndef RN_NAVIGATION_SDK_SPEC_H
+#define RN_NAVIGATION_SDK_SPEC_H
+// Make sure the build system can find the generated headers
 #import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
+#endif
+#endif
+
 #endif
 
 #import "NavView.h"
