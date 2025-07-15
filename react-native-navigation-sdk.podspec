@@ -44,7 +44,7 @@ Pod::Spec.new do |s|
     }
     s.dependency "React-Codegen"
     s.dependency "ReactCommon/turbomodule/core"
-    s.dependency "React-Native-Glog"
+    s.dependency "glog"
     s.dependency "React-jsi"
     s.dependency "React-rncore"
     s.dependency "RCT-Folly"
