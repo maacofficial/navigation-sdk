@@ -29,7 +29,7 @@
 static NSMutableDictionary<NSNumber *, NavViewController *> *_viewControllers;
 static NavViewModule *_navViewModule;
 
-RCT_EXPORT_MODULE();
+RCT_EXPORT_MODULE(RCTNavViewManager);
 
 RCT_EXPORT_VIEW_PROPERTY(onRecenterButtonClick, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onMapReady, RCTDirectEventBlock);
@@ -52,6 +52,10 @@ RCT_EXPORT_VIEW_PROPERTY(onGroundOverlayClick, RCTDirectEventBlock);
 
 - (UIView *)view {
   return [[NavView alloc] init];
+}
+
+- (NSString *)viewName {
+  return @"RCTNavView";
 }
 
 + (BOOL)requiresMainQueueSetup {

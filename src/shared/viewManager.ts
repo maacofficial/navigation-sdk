@@ -36,8 +36,27 @@ const isNewArchitectureAvailable = (): boolean => {
     // Check for Fabric/TurboModules availability
     const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
     const RCTNewArchitectureValidation = require('react-native/Libraries/NewArchitecture/RCTNewArchitectureValidation');
-    return TurboModuleRegistry != null && RCTNewArchitectureValidation != null;
-  } catch {
+
+    // Also check if we're in bridgeless mode (New Architecture)
+    const isBridgeless = (global as any).RN$Bridgeless === true;
+
+    console.log('🔍 Architecture Detection Debug:');
+    console.log(
+      '  - TurboModuleRegistry available:',
+      TurboModuleRegistry != null
+    );
+    console.log(
+      '  - RCTNewArchitectureValidation available:',
+      RCTNewArchitectureValidation != null
+    );
+    console.log('  - Bridgeless mode:', isBridgeless);
+
+    return (
+      (TurboModuleRegistry != null && RCTNewArchitectureValidation != null) ||
+      isBridgeless
+    );
+  } catch (error) {
+    console.log('🔍 Architecture detection error:', String(error));
     return false;
   }
 };
@@ -82,8 +101,22 @@ try {
         }
       } catch (codegenError) {
         console.log('❌ Codegen approach failed:', String(codegenError));
-        // Fallback to legacy approach
-        isNewArchitecture = false;
+
+        // For Bridgeless mode, try requireNativeComponent with RCTNavView name
+        try {
+          console.log('🔄 Trying Bridgeless component loading with RCTNavView');
+          RCTNavView = requireNativeComponent('RCTNavView');
+          componentLoadingStrategy = 'bridgeless-direct';
+          console.log('✅ Successfully loaded Bridgeless RCTNavView component');
+          componentRegistry.set('RCTNavView', RCTNavView);
+        } catch (bridgelessError) {
+          console.log(
+            '❌ Bridgeless approach failed:',
+            String(bridgelessError)
+          );
+          // Fallback to legacy approach
+          isNewArchitecture = false;
+        }
       }
     }
 
@@ -93,13 +126,33 @@ try {
       try {
         console.log('🏗️ Attempting legacy Bridge component loading');
 
-        // iOS exports as 'RCTNavViewManager' by default in Legacy Bridge
-        const componentName =
-          Platform.OS === 'ios' ? 'RCTNavViewManager' : 'NavViewManager';
-        RCTNavView = requireNativeComponent(componentName);
-        componentLoadingStrategy = 'legacy-bridge';
-        console.log(`✅ Successfully loaded legacy ${componentName} component`);
-        componentRegistry.set('RCTNavView', RCTNavView);
+        // Try multiple component names for compatibility
+        const componentNames =
+          Platform.OS === 'ios'
+            ? ['RCTNavView', 'RCTNavViewManager']
+            : ['NavViewManager'];
+
+        let lastError: Error | null = null;
+
+        for (const componentName of componentNames) {
+          try {
+            console.log(`🔄 Trying component name: ${componentName}`);
+            RCTNavView = requireNativeComponent(componentName);
+            componentLoadingStrategy = 'legacy-bridge';
+            console.log(
+              `✅ Successfully loaded legacy ${componentName} component`
+            );
+            componentRegistry.set('RCTNavView', RCTNavView);
+            break;
+          } catch (error) {
+            lastError = error as Error;
+            console.log(`❌ Failed to load ${componentName}:`, String(error));
+          }
+        }
+
+        if (!RCTNavView) {
+          throw lastError || new Error('All component names failed');
+        }
       } catch (legacyError) {
         console.log(
           '❌ Legacy requireNativeComponent failed:',
@@ -171,13 +224,31 @@ console.log('  📊 Component Registry Size:', componentRegistry.size);
 
 // Try to check if the native module is properly linked
 try {
-  const configName = Platform.OS === 'ios' ? 'RCTNavViewManager' : 'RCTNavView';
-  const config = UIManager.getViewManagerConfig(configName);
-  if (config) {
-    console.log(`  ✅ Native view config found for ${configName}`);
-    console.log('  🔧 Available commands:', Object.keys(config.Commands || {}));
-  } else {
-    console.log(`  ⚠️ No native view config found for ${configName}`);
+  const componentNames =
+    Platform.OS === 'ios'
+      ? ['RCTNavView', 'RCTNavViewManager']
+      : ['NavViewManager'];
+
+  let foundConfig = false;
+  for (const configName of componentNames) {
+    try {
+      const config = UIManager.getViewManagerConfig(configName);
+      if (config) {
+        console.log(`  ✅ Native view config found for ${configName}`);
+        console.log(
+          '  🔧 Available commands:',
+          Object.keys(config.Commands || {})
+        );
+        foundConfig = true;
+        break;
+      }
+    } catch (configError) {
+      // Continue trying other names
+    }
+  }
+
+  if (!foundConfig) {
+    console.log('  ⚠️ No native view config found for any component name');
   }
 } catch (error) {
   console.log('  ❌ Error checking native view config:', String(error));
@@ -212,8 +283,18 @@ export const viewManagerName = (() => {
   if (Platform.OS === 'android') {
     return 'NavViewManager';
   } else {
-    // iOS: In New Architecture use the actual component name, in Legacy use the manager name
-    return isNewArchitecture ? 'RCTNavView' : 'RCTNavViewManager';
+    // iOS: Try to use the same name as the loaded component
+    if (
+      componentLoadingStrategy === 'bridgeless-direct' ||
+      componentLoadingStrategy === 'new-architecture-codegen'
+    ) {
+      return 'RCTNavView';
+    } else {
+      // Legacy bridge: Check which component name was actually loaded
+      return componentLoadingStrategy.includes('RCTNavView')
+        ? 'RCTNavView'
+        : 'RCTNavViewManager';
+    }
   }
 })();
 
@@ -222,10 +303,8 @@ export const alternativeViewManagerNames = (() => {
   if (Platform.OS === 'android') {
     return ['NavViewManager'];
   } else {
-    // iOS: Provide both names as alternatives
-    return isNewArchitecture
-      ? ['RCTNavViewManager', 'NavView']
-      : ['RCTNavView', 'NavView'];
+    // iOS: Provide both names as alternatives for maximum compatibility
+    return ['RCTNavView', 'RCTNavViewManager', 'NavView'];
   }
 })();
 
