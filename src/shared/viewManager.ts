@@ -32,9 +32,27 @@ let componentLoadingStrategy = 'unknown';
 
 // Function to check if a view manager is already registered
 const isViewManagerRegistered = (name: string): boolean => {
+  if (isNewArchitectureAvailable()) {
+    // In New Architecture, Fabric components are registered differently
+    // We can't rely on UIManager.getViewManagerConfig for Fabric components
+    console.log(`🔍 Checking Fabric component availability for ${name}`);
+    return true; // Assume available if we're in New Architecture
+  } else {
+    // Legacy Bridge architecture
+    try {
+      const config = UIManager.getViewManagerConfig(name);
+      return config != null;
+    } catch {
+      return false;
+    }
+  }
+};
+
+// Function to check if we're in New Architecture mode
+const isNewArchitectureAvailable = (): boolean => {
   try {
-    const config = UIManager.getViewManagerConfig(name);
-    return config != null;
+    const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
+    return TurboModuleRegistry != null;
   } catch {
     return false;
   }
@@ -44,12 +62,32 @@ const isViewManagerRegistered = (name: string): boolean => {
 const componentRegistry = new Map<string, any>();
 
 try {
-  // First, check what's already registered to avoid conflicts
-  const registeredManagers = {
-    RCTNavView: isViewManagerRegistered('RCTNavView'),
-    RCTNavViewManager: isViewManagerRegistered('RCTNavViewManager'),
-    NavViewManager: isViewManagerRegistered('NavViewManager'),
-  };
+  // Check architecture mode first
+  const isNewArchitectureMode = isNewArchitectureAvailable();
+
+  // In New Architecture, Fabric components don't register with UIManager
+  // So we need different detection logic
+  let registeredManagers;
+
+  if (isNewArchitectureMode) {
+    // In New Architecture, we assume Fabric components are available if specs exist
+    registeredManagers = {
+      RCTNavView: false, // Fabric components don't show up in UIManager
+      RCTNavViewManager: false,
+      NavViewManager: false,
+      NewArchitecture: true,
+      FabricComponentsAvailable: true, // We'll verify this through successful imports
+    };
+  } else {
+    // Legacy architecture - check actual UIManager registrations
+    registeredManagers = {
+      RCTNavView: isViewManagerRegistered('RCTNavView'),
+      RCTNavViewManager: isViewManagerRegistered('RCTNavViewManager'),
+      NavViewManager: isViewManagerRegistered('NavViewManager'),
+      NewArchitecture: false,
+      FabricComponentsAvailable: false,
+    };
+  }
 
   console.log('📋 Registered view managers:', registeredManagers);
 
@@ -59,9 +97,8 @@ try {
     componentLoadingStrategy = 'cached-component';
     console.log('✅ Using cached RCTNavView component');
   } else {
-    // Check if we're in New Architecture mode
-    const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
-    isNewArchitecture = TurboModuleRegistry != null;
+    // Use the architecture detection we already did
+    isNewArchitecture = isNewArchitectureMode;
 
     console.log(
       '🏗️ Architecture mode:',
