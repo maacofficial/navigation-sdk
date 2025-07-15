@@ -17,13 +17,28 @@
 import {
   Platform,
   UIManager,
+  requireNativeComponent,
   type HostComponent,
   type ViewProps,
 } from 'react-native';
 import type { DirectEventHandler } from 'react-native/Libraries/Types/CodegenTypes';
 import type { LatLng } from '.';
 import type { Circle, GroundOverlay, Marker, Polygon, Polyline } from '../maps';
-import { RCTNavView } from '../specs/NativeComponents';
+
+// Safely import New Architecture component with fallback
+let RCTNavView: any;
+try {
+  const {
+    RCTNavView: ImportedRCTNavView,
+  } = require('../specs/NativeComponents');
+  RCTNavView = ImportedRCTNavView;
+} catch (error) {
+  // Fallback to legacy requireNativeComponent if New Architecture components are not available
+  console.log(
+    'New Architecture components not available, using legacy component'
+  );
+  RCTNavView = requireNativeComponent('RCTNavView');
+}
 
 // NavViewManager is responsible for managing both the regular map fragment as well as the navigation map view fragment.
 export const viewManagerName =
@@ -35,9 +50,11 @@ export const sendCommand = (
   args?: any[]
 ) => {
   if (command === undefined) {
-    throw new Error(
-      "Command not found, please make sure you're using the referencing the right method"
+    console.error(
+      "Command not found, please make sure you're using the right method. Available commands:",
+      Object.keys(commands)
     );
+    return;
   }
 
   try {
@@ -47,12 +64,92 @@ export const sendCommand = (
       args
     );
   } catch (exception) {
-    console.error(exception);
+    console.error('Error dispatching view manager command:', exception);
+    console.error('Command:', command, 'Args:', args, 'ViewId:', viewId);
   }
 };
 
-export const commands =
-  UIManager.getViewManagerConfig(viewManagerName).Commands;
+export const commands = (() => {
+  try {
+    const config = UIManager.getViewManagerConfig(viewManagerName);
+    if (config && config.Commands) {
+      return config.Commands;
+    } else {
+      console.warn(
+        `ViewManager config not found for ${viewManagerName}, using fallback commands`
+      );
+      // Fallback commands based on known command structure
+      return {
+        createFragment: 1,
+        setCameraPosition: 2,
+        animateCamera: 3,
+        addMarker: 4,
+        removeMarker: 5,
+        addCircle: 6,
+        removeCircle: 7,
+        addPolyline: 8,
+        removePolyline: 9,
+        addPolygon: 10,
+        removePolygon: 11,
+        setMapType: 12,
+        setTrafficEnabled: 13,
+        setPadding: 14,
+        getMyLocation: 15,
+        getCameraPosition: 16,
+        getUiSettings: 17,
+        setUiSettings: 18,
+        // Navigation specific commands
+        followMyLocation: 19,
+        setNavigationUIEnabled: 20,
+        setRecenterButtonEnabled: 21,
+        setSpeedometerEnabled: 22,
+        setSpeedLimitIconEnabled: 23,
+        setHeaderEnabled: 24,
+        setFooterEnabled: 25,
+        showRouteOverview: 26,
+        setTripProgressBarEnabled: 27,
+        setTrafficIncidentsCardEnabled: 28,
+      };
+    }
+  } catch (error) {
+    console.warn(
+      `Error getting ViewManager config for ${viewManagerName}:`,
+      error
+    );
+    // Return fallback commands
+    return {
+      createFragment: 1,
+      setCameraPosition: 2,
+      animateCamera: 3,
+      addMarker: 4,
+      removeMarker: 5,
+      addCircle: 6,
+      removeCircle: 7,
+      addPolyline: 8,
+      removePolyline: 9,
+      addPolygon: 10,
+      removePolygon: 11,
+      setMapType: 12,
+      setTrafficEnabled: 13,
+      setPadding: 14,
+      getMyLocation: 15,
+      getCameraPosition: 16,
+      getUiSettings: 17,
+      setUiSettings: 18,
+      // Navigation specific commands
+      followMyLocation: 19,
+      setNavigationUIEnabled: 20,
+      setRecenterButtonEnabled: 21,
+      setSpeedometerEnabled: 22,
+      setSpeedLimitIconEnabled: 23,
+      setHeaderEnabled: 24,
+      setFooterEnabled: 25,
+      showRouteOverview: 26,
+      setTripProgressBarEnabled: 27,
+      setTrafficIncidentsCardEnabled: 28,
+    };
+  }
+})();
 
 export interface NativeNavViewProps extends ViewProps {
   flex?: number | undefined;
@@ -69,3 +166,31 @@ export interface NativeNavViewProps extends ViewProps {
 
 type NativeNavViewManagerComponentType = HostComponent<NativeNavViewProps>;
 export const NavViewManager = RCTNavView as NativeNavViewManagerComponentType;
+
+// Debug function to check view manager registration
+export const debugViewManager = () => {
+  console.log('View Manager Debug Info:');
+  console.log('Platform:', Platform.OS);
+  console.log('View Manager Name:', viewManagerName);
+
+  try {
+    const config = UIManager.getViewManagerConfig(viewManagerName);
+    console.log('View Manager Config:', config);
+
+    if (config) {
+      console.log('Available Commands:', config.Commands);
+      console.log('Config keys:', Object.keys(config));
+    } else {
+      console.log('View Manager Config is null/undefined');
+    }
+  } catch (error) {
+    console.log('Error getting view manager config:', error);
+  }
+
+  // List some UIManager properties for debugging
+  console.log(
+    'UIManager has getViewManagerConfig:',
+    typeof UIManager.getViewManagerConfig === 'function'
+  );
+  console.log('UIManager properties:', Object.keys(UIManager).slice(0, 10)); // First 10 keys
+};
