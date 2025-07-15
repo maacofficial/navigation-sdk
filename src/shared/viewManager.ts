@@ -105,271 +105,94 @@ try {
       isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
     );
 
-    // CRITICAL: Check if RCTNavView is already registered in React Native's system
-    // This is the key to avoiding dual registration errors
-    let isAlreadyRegistered = false;
-    try {
-      // Try to check if the component is already registered by testing requireNativeComponent
-      // If it throws a "Tried to register two views" error, we know it's already registered
-      const testComponent = requireNativeComponent('RCTNavView');
-      if (testComponent) {
-        // Found a component, but we need to verify it has a proper view config
-        try {
-          // Try to get the view manager config to verify it's properly implemented
-          const config = UIManager.getViewManagerConfig('RCTNavView');
-          if (config && config.Commands) {
-            // The component has proper native implementation
-            isAlreadyRegistered = true;
-            RCTNavView = testComponent;
-            componentLoadingStrategy = 'existing-registration-detected';
+    // Skip the complex registration detection and go straight to component loading
+    // Since we fixed the iOS native module export name, we should be able to load it directly
+
+    if (isNewArchitecture) {
+      // For New Architecture, try codegen first
+      try {
+        // Import the codegen component directly
+        const {
+          default: RCTNavViewCodegen,
+        } = require('../specs/RCTNavViewNativeComponent');
+
+        console.log(`🔍 Codegen component type: ${typeof RCTNavViewCodegen}`);
+
+        if (typeof RCTNavViewCodegen === 'function') {
+          // This is the ideal case - codegen returned a proper React component
+          RCTNavView = RCTNavViewCodegen;
+          componentLoadingStrategy = 'new-architecture-codegen';
+          console.log('✅ Using New Architecture codegen component');
+          componentRegistry.set('RCTNavView', RCTNavView);
+        } else if (typeof RCTNavViewCodegen === 'string') {
+          // If codegen returns a string, it means codegen didn't run properly
+          // Fall back to requireNativeComponent which should work for both architectures
+          console.log(`🔍 Codegen returned string: ${RCTNavViewCodegen}`);
+
+          try {
+            // Use requireNativeComponent as fallback - this will work in both architectures
+            RCTNavView = requireNativeComponent(RCTNavViewCodegen);
+            componentLoadingStrategy = 'new-architecture-require-fallback';
             console.log(
-              '✅ Found existing RCTNavView registration with valid config, using it directly'
+              '✅ Using requireNativeComponent fallback for New Architecture'
             );
             componentRegistry.set('RCTNavView', RCTNavView);
-          } else {
-            // Component exists but has no proper view config - it's a corrupted registration
-            // But let's try to use it anyway since the native side might actually work
+          } catch (requireError) {
             console.log(
-              '⚠️ Found RCTNavView registration but no valid view config, attempting to use it anyway'
+              '❌ requireNativeComponent fallback failed:',
+              String(requireError)
             );
-
-            // Try to use the existing component first
-            try {
-              isAlreadyRegistered = true;
-              RCTNavView = testComponent;
-              componentLoadingStrategy = 'existing-registration-forced';
-              console.log(
-                '✅ Using existing RCTNavView registration despite missing view config'
-              );
-              componentRegistry.set('RCTNavView', RCTNavView);
-            } catch (useError) {
-              console.log(
-                '❌ Failed to use existing registration, creating proxy:',
-                String(useError)
-              );
-
-              // If using the existing component fails, fall back to proxy
-              const React = require('react');
-              const { View, Text } = require('react-native');
-              RCTNavView = React.forwardRef((props: any, ref: any) => {
-                console.warn(
-                  'Using proxy component - corrupted native registration detected'
-                );
-                return React.createElement(
-                  View,
-                  {
-                    ...props,
-                    ref,
-                    style: [
-                      props.style,
-                      {
-                        backgroundColor: '#ffe6e6',
-                        minHeight: 150,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 2,
-                        borderColor: '#ff9999',
-                        borderStyle: 'dashed',
-                      },
-                    ],
-                  },
-                  React.createElement(
-                    Text,
-                    { style: { color: '#cc0000', textAlign: 'center' } },
-                    'NavView (Corrupted Registration)\nNative config missing'
-                  )
-                );
-              });
-              componentLoadingStrategy = 'corrupted-registration-proxy';
-              componentRegistry.set('RCTNavView', RCTNavView);
-              isAlreadyRegistered = true;
-            }
+            throw requireError;
           }
-        } catch (configError) {
-          console.log(
-            '⚠️ Found RCTNavView registration but failed to get view config:',
-            String(configError)
+        } else {
+          throw new Error(
+            `Unexpected codegen type: ${typeof RCTNavViewCodegen}`
           );
-          // Component exists but config check failed - also treat as corrupted
-          const React = require('react');
-          const { View, Text } = require('react-native');
-          RCTNavView = React.forwardRef((props: any, ref: any) => {
-            console.warn(
-              'Using proxy component - config check failed for existing registration'
-            );
-            return React.createElement(
-              View,
-              {
-                ...props,
-                ref,
-                style: [
-                  props.style,
-                  {
-                    backgroundColor: '#fff3cd',
-                    minHeight: 150,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderWidth: 2,
-                    borderColor: '#ffc107',
-                    borderStyle: 'dashed',
-                  },
-                ],
-              },
-              React.createElement(
-                Text,
-                { style: { color: '#856404', textAlign: 'center' } },
-                'NavView (Config Error)\nUnable to verify native config'
-              )
-            );
-          });
-          componentLoadingStrategy = 'config-error-proxy';
-          componentRegistry.set('RCTNavView', RCTNavView);
-          isAlreadyRegistered = true; // Skip normal registration
         }
-      } else {
-        console.log(
-          '🔍 requireNativeComponent test returned null, proceeding with registration'
-        );
-      }
-    } catch (testError) {
-      const errorMessage = String(testError);
-      if (
-        errorMessage.includes('Tried to register two views with the same name')
-      ) {
-        isAlreadyRegistered = true;
-        console.log('🔍 RCTNavView is already registered (detected via error)');
-
-        // Create a safe proxy component that indicates dual registration conflict
-        const React = require('react');
-        const { View, Text } = require('react-native');
-        RCTNavView = React.forwardRef((props: any, ref: any) => {
-          console.warn('Using proxy component due to registration conflict');
-          return React.createElement(
-            View,
-            {
-              ...props,
-              ref,
-              style: [
-                props.style,
-                {
-                  backgroundColor: '#e6f3ff',
-                  minHeight: 150,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor: '#007acc',
-                  borderStyle: 'dashed',
-                },
-              ],
-            },
-            React.createElement(
-              Text,
-              { style: { color: '#005999', textAlign: 'center' } },
-              'NavView (Registration Conflict)\nDual registration detected'
-            )
-          );
-        });
-        componentLoadingStrategy = 'registration-conflict-proxy';
-        componentRegistry.set('RCTNavView', RCTNavView);
-
-        // Set a flag to skip the normal registration logic
-        isAlreadyRegistered = true;
-      } else {
-        // Different error, component is not registered yet
-        console.log('🔍 RCTNavView is not yet registered, safe to proceed');
-        console.log('🔍 Test error was:', String(testError));
+      } catch (codegenError) {
+        console.log('❌ Codegen approach failed:', String(codegenError));
+        // Fallback to legacy approach
+        isNewArchitecture = false;
       }
     }
 
-    // Only proceed with normal registration if we haven't already handled the component
-    if (!isAlreadyRegistered) {
-      // Component is not registered, safe to proceed with normal registration logic
-      if (isNewArchitecture) {
-        // For New Architecture, try codegen first
-        try {
-          // Import the codegen component directly
-          const {
-            default: RCTNavViewCodegen,
-          } = require('../specs/RCTNavViewNativeComponent');
+    // If New Architecture failed or not available, use legacy approach
+    if (!isNewArchitecture) {
+      // For Legacy Bridge, try direct requireNativeComponent
+      try {
+        console.log('🏗️ Attempting legacy Bridge component loading');
 
-          console.log(`🔍 Codegen component type: ${typeof RCTNavViewCodegen}`);
+        // Now that iOS exports as 'RCTNavView', we can use the consistent name
+        RCTNavView = requireNativeComponent('RCTNavView');
+        componentLoadingStrategy = 'legacy-bridge';
+        console.log('✅ Successfully loaded legacy RCTNavView component');
+        componentRegistry.set('RCTNavView', RCTNavView);
+      } catch (legacyError) {
+        console.log(
+          '❌ Legacy requireNativeComponent failed:',
+          String(legacyError)
+        );
 
-          if (typeof RCTNavViewCodegen === 'function') {
-            // This is the ideal case - codegen returned a proper React component
-            RCTNavView = RCTNavViewCodegen;
-            componentLoadingStrategy = 'new-architecture-codegen';
-            console.log('✅ Using New Architecture codegen component');
+        // Try alternative name for iOS Legacy Bridge as fallback
+        if (Platform.OS === 'ios') {
+          try {
+            console.log('🔄 Trying iOS fallback: RCTNavViewManager');
+            RCTNavView = requireNativeComponent('RCTNavViewManager');
+            componentLoadingStrategy = 'legacy-bridge-ios-alt';
+            console.log('✅ Successfully loaded RCTNavViewManager component');
             componentRegistry.set('RCTNavView', RCTNavView);
-          } else if (typeof RCTNavViewCodegen === 'string') {
-            // If codegen returns a string, it means codegen didn't run properly
-            // Fall back to requireNativeComponent which should work for both architectures
-            console.log(`🔍 Codegen returned string: ${RCTNavViewCodegen}`);
-
-            try {
-              // Use requireNativeComponent as fallback - this will work in both architectures
-              RCTNavView = requireNativeComponent(RCTNavViewCodegen);
-              componentLoadingStrategy = 'new-architecture-require-fallback';
-              console.log(
-                '✅ Using requireNativeComponent fallback for New Architecture'
-              );
-              componentRegistry.set('RCTNavView', RCTNavView);
-            } catch (requireError) {
-              console.log(
-                '❌ requireNativeComponent fallback failed:',
-                String(requireError)
-              );
-              throw requireError;
-            }
-          } else {
-            throw new Error(
-              `Unexpected codegen type: ${typeof RCTNavViewCodegen}`
+          } catch (iosError) {
+            console.log(
+              '❌ iOS alternative requireNativeComponent failed:',
+              String(iosError)
             );
-          }
-        } catch (codegenError) {
-          console.log('❌ Codegen approach failed:', String(codegenError));
-          // Fallback to legacy approach
-          isNewArchitecture = false;
-        }
-      }
 
-      // If New Architecture failed or not available, use legacy approach
-      if (!isNewArchitecture) {
-        // For Legacy Bridge, try direct requireNativeComponent
-        try {
-          console.log('🏗️ Attempting legacy Bridge component loading');
-
-          // Now that iOS exports as 'RCTNavView', we can use the consistent name
-          RCTNavView = requireNativeComponent('RCTNavView');
-          componentLoadingStrategy = 'legacy-bridge';
-          console.log('✅ Successfully loaded legacy RCTNavView component');
-          componentRegistry.set('RCTNavView', RCTNavView);
-        } catch (legacyError) {
-          console.log(
-            '❌ Legacy requireNativeComponent failed:',
-            String(legacyError)
-          );
-
-          // Try alternative name for iOS Legacy Bridge as fallback
-          if (Platform.OS === 'ios') {
-            try {
-              console.log('🔄 Trying iOS fallback: RCTNavViewManager');
-              RCTNavView = requireNativeComponent('RCTNavViewManager');
-              componentLoadingStrategy = 'legacy-bridge-ios-alt';
-              console.log('✅ Successfully loaded RCTNavViewManager component');
-              componentRegistry.set('RCTNavView', RCTNavView);
-            } catch (iosError) {
-              console.log(
-                '❌ iOS alternative requireNativeComponent failed:',
-                String(iosError)
-              );
-
-              // Create fallback component
-              createLegacyFallbackComponent();
-            }
-          } else {
-            // Create fallback component for other platforms
+            // Create fallback component
             createLegacyFallbackComponent();
           }
+        } else {
+          // Create fallback component for other platforms
+          createLegacyFallbackComponent();
         }
       }
     }
