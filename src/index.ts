@@ -19,5 +19,6 @@ export * from './maps';
 export * from './navigation';
 export * from './shared';
 
-// Export New Architecture specs for advanced usage
-export * from './specs';
+// Export New Architecture specs only for internal/advanced usage
+// Users should not need to import these directly
+// export * from './specs';
