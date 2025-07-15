@@ -20,6 +20,8 @@ import { NativeModules } from 'react-native';
 let NavModuleTurbo: any;
 let NavAutoModuleTurbo: any;
 let NavViewModuleTurbo: any;
+let NavEventDispatcherTurbo: any;
+let NavAutoEventDispatcherTurbo: any;
 
 try {
   NavModuleTurbo = require('../specs/NativeNavModule').default;
@@ -40,15 +42,29 @@ try {
   NavViewModuleTurbo = null;
 }
 
+try {
+  NavEventDispatcherTurbo = require('../specs/NativeEventDispatcher').default;
+} catch (e) {
+  NavEventDispatcherTurbo = null;
+}
+
+try {
+  NavAutoEventDispatcherTurbo =
+    require('../specs/NativeAutoEventDispatcher').default;
+} catch (e) {
+  NavAutoEventDispatcherTurbo = null;
+}
+
 // Export the appropriate module based on architecture
 export const NavModule = NavModuleTurbo ?? NativeModules.NavModule;
 export const NavAutoModule = NavAutoModuleTurbo ?? NativeModules.NavAutoModule;
 export const NavViewModule = NavViewModuleTurbo ?? NativeModules.NavViewModule;
 
-// Event dispatchers with null safety
-export const NavEventDispatcher = NativeModules.NavEventDispatcher ?? null;
+// Event dispatchers with TurboModule fallback
+export const NavEventDispatcher =
+  NavEventDispatcherTurbo ?? NativeModules.NavEventDispatcher ?? null;
 export const NavAutoEventDispatcher =
-  NativeModules.NavAutoEventDispatcher ?? null;
+  NavAutoEventDispatcherTurbo ?? NativeModules.NavAutoEventDispatcher ?? null;
 
 // Log warnings if event dispatchers are not available
 if (!NavEventDispatcher) {

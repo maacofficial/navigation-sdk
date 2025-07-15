@@ -120,7 +120,22 @@ try {
           '❌ New Architecture component import failed:',
           String(newArchError)
         );
-        isNewArchitecture = false;
+        // For New Architecture, try requireNativeComponent as fallback
+        // This ensures the component gets properly registered with Fabric
+        try {
+          RCTNavView = requireNativeComponent('RCTNavView');
+          componentLoadingStrategy = 'new-architecture-fallback';
+          console.log(
+            '✅ Using New Architecture requireNativeComponent fallback'
+          );
+          componentRegistry.set('RCTNavView', RCTNavView);
+        } catch (fallbackError) {
+          console.log(
+            '❌ New Architecture fallback failed:',
+            String(fallbackError)
+          );
+          isNewArchitecture = false;
+        }
       }
     }
 
@@ -185,6 +200,29 @@ try {
 
 console.log('🎯 Final component loading strategy:', componentLoadingStrategy);
 
+// Add specific debugging for New Architecture component issues
+if (
+  isNewArchitecture &&
+  componentLoadingStrategy.includes('new-architecture')
+) {
+  console.log('🔍 New Architecture Component Debug:');
+  console.log('  - RCTNavView type:', typeof RCTNavView);
+  console.log(
+    '  - RCTNavView constructor name:',
+    RCTNavView?.constructor?.name
+  );
+  console.log('  - Component loaded successfully for Fabric rendering');
+
+  // Check if the component is properly bound to the native implementation
+  if (typeof RCTNavView === 'function') {
+    console.log('  - ✅ Component is a valid React component function');
+  } else {
+    console.log(
+      '  - ❌ Component is not a function, this may cause rendering issues'
+    );
+  }
+}
+
 // NavViewManager is responsible for managing both the regular map fragment as well as the navigation map view fragment.
 // Use different view manager names for different architectures to avoid registration conflicts
 export const viewManagerName = (() => {
@@ -232,7 +270,45 @@ export const sendCommand = (
 };
 
 export const commands = (() => {
-  // Try to get commands from the primary view manager name
+  // In New Architecture (Fabric), commands work differently
+  if (isNewArchitecture) {
+    console.log('🔧 Using New Architecture command handling');
+    // For New Architecture, we rely on the Fabric component to handle commands
+    // Commands are defined in the component spec and handled by the native component view
+    return {
+      createFragment: 1,
+      setCameraPosition: 2,
+      animateCamera: 3,
+      addMarker: 4,
+      removeMarker: 5,
+      addCircle: 6,
+      removeCircle: 7,
+      addPolyline: 8,
+      removePolyline: 9,
+      addPolygon: 10,
+      removePolygon: 11,
+      setMapType: 12,
+      setTrafficEnabled: 13,
+      setPadding: 14,
+      getMyLocation: 15,
+      getCameraPosition: 16,
+      getUiSettings: 17,
+      setUiSettings: 18,
+      // Navigation specific commands
+      followMyLocation: 19,
+      setNavigationUIEnabled: 20,
+      setRecenterButtonEnabled: 21,
+      setSpeedometerEnabled: 22,
+      setSpeedLimitIconEnabled: 23,
+      setHeaderEnabled: 24,
+      setFooterEnabled: 25,
+      showRouteOverview: 26,
+      setTripProgressBarEnabled: 27,
+      setTrafficIncidentsCardEnabled: 28,
+    };
+  }
+
+  // Legacy Bridge: Try to get commands from the primary view manager name
   let config = null;
   let foundViewManagerName = viewManagerName;
 

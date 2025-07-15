@@ -21,6 +21,8 @@
 #import "NavModuleTurbo.h"
 #import "NavAutoModuleTurbo.h"
 #import "NavViewModuleTurbo.h"
+#import "NavEventDispatcher.h"
+#import "NavAutoEventDispatcher.h"
 #endif
 
 @implementation RNNavigationSdkTurboModuleProvider
@@ -56,6 +58,28 @@
       facebook::react::ObjCTurboModule::InitParams{
         .moduleName = "NavViewModule",
         .instance = [[NavViewModuleTurbo alloc] init],
+        .jsInvoker = jsInvoker,
+        .nativeInvoker = [RCTTurboModuleManager createTurboModuleMethodQueue]
+      }
+    );
+  }
+  
+  if (name == "NavEventDispatcher") {
+    return std::make_shared<facebook::react::NativeEventDispatcherSpecJSI>(
+      facebook::react::ObjCTurboModule::InitParams{
+        .moduleName = "NavEventDispatcher",
+        .instance = [[NavEventDispatcher alloc] init],
+        .jsInvoker = jsInvoker,
+        .nativeInvoker = [RCTTurboModuleManager createTurboModuleMethodQueue]
+      }
+    );
+  }
+  
+  if (name == "NavAutoEventDispatcher") {
+    return std::make_shared<facebook::react::NativeAutoEventDispatcherSpecJSI>(
+      facebook::react::ObjCTurboModule::InitParams{
+        .moduleName = "NavAutoEventDispatcher",
+        .instance = [[NavAutoEventDispatcher alloc] init],
         .jsInvoker = jsInvoker,
         .nativeInvoker = [RCTTurboModuleManager createTurboModuleMethodQueue]
       }
