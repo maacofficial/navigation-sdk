@@ -126,33 +126,13 @@ try {
       try {
         console.log('🏗️ Attempting legacy Bridge component loading');
 
-        // Try multiple component names for compatibility
-        const componentNames =
-          Platform.OS === 'ios'
-            ? ['RCTNavView', 'RCTNavViewManager']
-            : ['NavViewManager'];
-
-        let lastError: Error | null = null;
-
-        for (const componentName of componentNames) {
-          try {
-            console.log(`🔄 Trying component name: ${componentName}`);
-            RCTNavView = requireNativeComponent(componentName);
-            componentLoadingStrategy = 'legacy-bridge';
-            console.log(
-              `✅ Successfully loaded legacy ${componentName} component`
-            );
-            componentRegistry.set('RCTNavView', RCTNavView);
-            break;
-          } catch (error) {
-            lastError = error as Error;
-            console.log(`❌ Failed to load ${componentName}:`, String(error));
-          }
-        }
-
-        if (!RCTNavView) {
-          throw lastError || new Error('All component names failed');
-        }
+        // iOS exports as 'RCTNavView' by default in Legacy Bridge
+        const componentName =
+          Platform.OS === 'ios' ? 'RCTNavView' : 'NavViewManager';
+        RCTNavView = requireNativeComponent(componentName);
+        componentLoadingStrategy = 'legacy-bridge';
+        console.log(`✅ Successfully loaded legacy ${componentName} component`);
+        componentRegistry.set('RCTNavView', RCTNavView);
       } catch (legacyError) {
         console.log(
           '❌ Legacy requireNativeComponent failed:',
@@ -224,31 +204,13 @@ console.log('  📊 Component Registry Size:', componentRegistry.size);
 
 // Try to check if the native module is properly linked
 try {
-  const componentNames =
-    Platform.OS === 'ios'
-      ? ['RCTNavView', 'RCTNavViewManager']
-      : ['NavViewManager'];
-
-  let foundConfig = false;
-  for (const configName of componentNames) {
-    try {
-      const config = UIManager.getViewManagerConfig(configName);
-      if (config) {
-        console.log(`  ✅ Native view config found for ${configName}`);
-        console.log(
-          '  🔧 Available commands:',
-          Object.keys(config.Commands || {})
-        );
-        foundConfig = true;
-        break;
-      }
-    } catch (configError) {
-      // Continue trying other names
-    }
-  }
-
-  if (!foundConfig) {
-    console.log('  ⚠️ No native view config found for any component name');
+  const configName = Platform.OS === 'ios' ? 'RCTNavView' : 'NavViewManager';
+  const config = UIManager.getViewManagerConfig(configName);
+  if (config) {
+    console.log(`  ✅ Native view config found for ${configName}`);
+    console.log('  🔧 Available commands:', Object.keys(config.Commands || {}));
+  } else {
+    console.log(`  ⚠️ No native view config found for ${configName}`);
   }
 } catch (error) {
   console.log('  ❌ Error checking native view config:', String(error));
@@ -283,18 +245,8 @@ export const viewManagerName = (() => {
   if (Platform.OS === 'android') {
     return 'NavViewManager';
   } else {
-    // iOS: Try to use the same name as the loaded component
-    if (
-      componentLoadingStrategy === 'bridgeless-direct' ||
-      componentLoadingStrategy === 'new-architecture-codegen'
-    ) {
-      return 'RCTNavView';
-    } else {
-      // Legacy bridge: Check which component name was actually loaded
-      return componentLoadingStrategy.includes('RCTNavView')
-        ? 'RCTNavView'
-        : 'RCTNavViewManager';
-    }
+    // iOS: In New Architecture use the actual component name, in Legacy use the manager name
+    return 'RCTNavView';
   }
 })();
 
@@ -303,8 +255,8 @@ export const alternativeViewManagerNames = (() => {
   if (Platform.OS === 'android') {
     return ['NavViewManager'];
   } else {
-    // iOS: Provide both names as alternatives for maximum compatibility
-    return ['RCTNavView', 'RCTNavViewManager', 'NavView'];
+    // iOS: Provide both names as alternatives
+    return ['RCTNavViewManager', 'NavView'];
   }
 })();
 
@@ -374,30 +326,10 @@ export const commands = (() => {
 
   // Legacy Bridge: Try to get commands from the primary view manager name
   let config = null;
-  let foundViewManagerName = viewManagerName;
+  const foundViewManagerName = viewManagerName;
 
   try {
     config = UIManager.getViewManagerConfig(viewManagerName);
-
-    // If primary name doesn't work, try alternatives
-    if (!config || !config.Commands) {
-      for (const altName of alternativeViewManagerNames) {
-        try {
-          const altConfig = UIManager.getViewManagerConfig(altName);
-          if (altConfig && altConfig.Commands) {
-            config = altConfig;
-            foundViewManagerName = altName;
-            console.log(
-              `Using view manager: ${altName} instead of ${viewManagerName}`
-            );
-            break;
-          }
-        } catch (altError) {
-          // Continue trying other names
-        }
-      }
-    }
-
     if (config && config.Commands) {
       console.log(`Successfully loaded commands from ${foundViewManagerName}`);
       return config.Commands;
