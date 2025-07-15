@@ -38,15 +38,17 @@ Pod::Spec.new do |s|
   if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
     s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
     s.pod_target_xcconfig    = {
-        "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Codegen/react/renderer/components\" \"$(PODS_TARGET_SRCROOT)/build/generated/ios\"",
+        "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Codegen\" \"$(PODS_ROOT)/Headers/Public\" \"$(PODS_TARGET_SRCROOT)/build/generated/ios\"",
         "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
         "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
     }
+    s.dependency "React-Core"
     s.dependency "React-Codegen"
     s.dependency "ReactCommon/turbomodule/core"
     s.dependency "glog"
     s.dependency "React-jsi"
     s.dependency "React-rncore"
     s.dependency "RCT-Folly"
+    s.dependency "React-Fabric"
   end
 end
