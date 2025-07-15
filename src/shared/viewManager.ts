@@ -113,16 +113,33 @@ try {
       // If it throws a "Tried to register two views" error, we know it's already registered
       const testComponent = requireNativeComponent('RCTNavView');
       if (testComponent) {
-        isAlreadyRegistered = true;
-        RCTNavView = testComponent;
-        componentLoadingStrategy = 'existing-registration-detected';
-        console.log(
-          '✅ Found existing RCTNavView registration, using it directly'
-        );
-        componentRegistry.set('RCTNavView', RCTNavView);
-
-        // Early return since we found the component
-        // Exit the try block early since we already have the component
+        // Found a component, but we need to verify it has a proper view config
+        try {
+          // Try to get the view manager config to verify it's properly implemented
+          const config = UIManager.getViewManagerConfig('RCTNavView');
+          if (config && config.Commands) {
+            // The component has proper native implementation
+            isAlreadyRegistered = true;
+            RCTNavView = testComponent;
+            componentLoadingStrategy = 'existing-registration-detected';
+            console.log(
+              '✅ Found existing RCTNavView registration with valid config, using it directly'
+            );
+            componentRegistry.set('RCTNavView', RCTNavView);
+          } else {
+            // Component exists but has no proper view config - it's a stub registration
+            console.log(
+              '⚠️ Found RCTNavView registration but no valid view config, proceeding with proper registration'
+            );
+            // Don't use the existing component, proceed with normal registration
+          }
+        } catch (configError) {
+          console.log(
+            '⚠️ Found RCTNavView registration but failed to get view config:',
+            String(configError)
+          );
+          // Component exists but config check failed, proceed with normal registration
+        }
       } else {
         console.log(
           '🔍 requireNativeComponent test returned null, proceeding with registration'
