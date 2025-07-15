@@ -30,13 +30,7 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => "15.0" }
   s.source       = { :git => "https://github.com/googlemaps/react-native-navigation-sdk.git", :tag => "#{s.version}" }
 
-  s.source_files = "ios/react-native-navigation-sdk/*.{h,m,mm}"
-
-  # Don't install the dependencies when we run `pod install` in the old architecture.
-  if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
-    s.source_files = "ios/react-native-navigation-sdk/*.{h,m,mm}, build/generated/ios/**/*.{h,mm,cpp}"
-  end
-
+  s.source_files = "ios/react-native-navigation-sdk/*.{h,m,mm}", "cpp/*.{h,cpp}"
   s.dependency "React-Core"
   s.dependency "GoogleNavigation", "9.3.0"
 
@@ -48,12 +42,11 @@ Pod::Spec.new do |s|
         "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
         "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
     }
-
-    s.dependency "React-RCTFabric"
     s.dependency "React-Codegen"
-    s.dependency "RCT-Folly"
-    s.dependency "RCTRequired"
-    s.dependency "RCTTypeSafety"
     s.dependency "ReactCommon/turbomodule/core"
+    s.dependency "React-Native-Glog"
+    s.dependency "React-jsi"
+    s.dependency "React-rncore"
+    s.dependency "RCT-Folly"
   end
 end
