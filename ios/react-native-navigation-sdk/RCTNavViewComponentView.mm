@@ -74,4 +74,11 @@ Class<RCTComponentViewProtocol> RCTNavViewCls(void)
 
 @end
 
+// Register the component with React Native Fabric
+Class<RCTComponentViewProtocol> RCTNavViewCls(void);
+Class<RCTComponentViewProtocol> RCTNavViewCls(void)
+{
+  return RCTNavViewComponentView.class;
+}
+
 #endif

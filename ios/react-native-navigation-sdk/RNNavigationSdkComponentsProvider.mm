@@ -18,6 +18,7 @@
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RCTNavViewComponentView.h"
+#import <React/RCTComponentViewFactory.h>
 #endif
 
 @implementation RNNavigationSdkComponentsProvider
@@ -29,6 +30,12 @@
     @"RCTNavView": RCTNavViewComponentView.class,
     @"RCTMapView": RCTNavViewComponentView.class, // Using the same component for now
   };
+}
+
+// Register components with React Native
++ (void)load
+{
+  [RCTComponentViewFactory.currentComponentViewFactory registerComponentViewClass:RCTNavViewComponentView.class forName:@"RCTNavView"];
 }
 #endif
 
