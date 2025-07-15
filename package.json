@@ -89,6 +89,14 @@
       "@commitlint/config-conventional"
     ]
   },
+  "codegenConfig": {
+    "name": "react-native-navigation-sdk",
+    "type": "all",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.reactnativenavigationsdk"
+    }
+  },
   "eslintConfig": {
     "root": true,
     "extends": [
@@ -138,13 +146,5 @@
         }
       ]
     ]
-  },
-  "codegenConfig": {
-    "name": "RNNavigationSdkSpec",
-    "type": "all",
-    "jsSrcsDir": "src/specs",
-    "android": {
-      "javaPackageName": "com.google.android.react.navsdk"
-    }
   }
 }
