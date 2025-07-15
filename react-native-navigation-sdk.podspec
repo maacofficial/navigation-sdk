@@ -31,17 +31,17 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/googlemaps/react-native-navigation-sdk.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/react-native-navigation-sdk/*.{h,m,mm}", "cpp/*.{h,cpp}"
-  s.dependency "React-Core"
   s.dependency "GoogleNavigation", "9.3.0"
 
   # Don't install the dependencies when we run `pod install` in the old architecture.
   if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
     s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
     s.pod_target_xcconfig    = {
-        "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Codegen\" \"$(PODS_ROOT)/Headers/Public/React-Codegen\" \"$(PODS_ROOT)/Headers/Public/ReactCommon\" \"$(PODS_ROOT)/Headers/Public/React-Core\" \"$(PODS_ROOT)/Headers/Private/React-Core\" \"$(PODS_ROOT)/Headers/Public/React-Fabric\" \"$(PODS_ROOT)/Headers/Public/React-jsi\" \"$(PODS_ROOT)/Headers/Public/React-rncore\" \"$(PODS_ROOT)/Headers/Public/RCT-Folly\" \"$(PODS_TARGET_SRCROOT)/build/generated/ios\"",
+        "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Codegen\" \"$(PODS_ROOT)/Headers/Public\" \"$(PODS_TARGET_SRCROOT)/build/generated/ios\"",
         "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
         "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
     }
+    s.dependency "React-Core"
     s.dependency "React-Codegen"
     s.dependency "ReactCommon/turbomodule/core"
     s.dependency "glog"
