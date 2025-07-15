@@ -25,10 +25,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NavViewModuleTurbo : NavViewModule
+@interface NavViewModuleTurbo : NSObject
 
 #ifdef RCT_NEW_ARCH_ENABLED
 <NativeNavViewModuleSpec>
+#else
+<RCTBridgeModule>
 #endif
 
 @end

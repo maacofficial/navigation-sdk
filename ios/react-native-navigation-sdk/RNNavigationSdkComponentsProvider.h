@@ -17,22 +17,18 @@
 #import <Foundation/Foundation.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
-#import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
+#import <React/RCTFabricComponentsPlugins.h>
+#import "RCTNavViewComponentView.h"
 #endif
-
-#import <React/RCTBridgeModule.h>
-#import "NavAutoModule.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface NavAutoModuleTurbo : NSObject
-
 #ifdef RCT_NEW_ARCH_ENABLED
-<NativeNavAutoModuleSpec>
-#else
-<RCTBridgeModule>
-#endif
+@interface RNNavigationSdkComponentsProvider : NSObject
+
++ (NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents;
 
 @end
+#endif
 
 NS_ASSUME_NONNULL_END

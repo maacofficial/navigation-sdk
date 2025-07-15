@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-#import <Foundation/Foundation.h>
+#import "RNNavigationSdkComponentsProvider.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
-#import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
+#import "RCTNavViewComponentView.h"
 #endif
 
-#import <React/RCTBridgeModule.h>
-#import "NavAutoModule.h"
-
-NS_ASSUME_NONNULL_BEGIN
-
-@interface NavAutoModuleTurbo : NSObject
+@implementation RNNavigationSdkComponentsProvider
 
 #ifdef RCT_NEW_ARCH_ENABLED
-<NativeNavAutoModuleSpec>
-#else
-<RCTBridgeModule>
++ (NSDictionary<NSString *, Class<RCTComponentViewProtocol>> *)thirdPartyFabricComponents
+{
+  return @{
+    @"RCTNavView": RCTNavViewComponentView.class,
+    @"RCTMapView": RCTNavViewComponentView.class, // Using the same component for now
+  };
+}
 #endif
 
 @end
-
-NS_ASSUME_NONNULL_END

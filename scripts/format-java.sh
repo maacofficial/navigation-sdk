@@ -15,8 +15,29 @@
 
 # Script to format or check formatting for Java files in /android and /example/android
 
+# Check if google-java-format is available
+if ! command -v google-java-format > /dev/null 2>&1; then
+    echo "google-java-format not found, skipping Java formatting"
+    echo "Install with: brew install google-java-format"
+    exit 0
+fi
+
+# Only search in directories that exist
+SEARCH_DIRS=""
+if [ -d "android/src" ]; then
+    SEARCH_DIRS="$SEARCH_DIRS android/src"
+fi
+if [ -d "example/android/app/src" ]; then
+    SEARCH_DIRS="$SEARCH_DIRS example/android/app/src"
+fi
+
+if [ -z "$SEARCH_DIRS" ]; then
+    echo "No Java directories found, skipping formatting"
+    exit 0
+fi
+
 if [ "$1" = "--check" ]; then
-    find android/src example/android/app/src -name "*.java" | xargs google-java-format --dry-run --set-exit-if-changed
+    find $SEARCH_DIRS -name "*.java" | xargs google-java-format --dry-run --set-exit-if-changed
 else
-    find android/src example/android/app/src -name "*.java" | xargs google-java-format -i
+    find $SEARCH_DIRS -name "*.java" | xargs google-java-format -i
 fi

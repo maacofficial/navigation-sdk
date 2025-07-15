@@ -20,7 +20,11 @@
 #import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
 #endif
 
-@implementation NavAutoModuleTurbo
+#import "NavAutoModule.h"
+
+@implementation NavAutoModuleTurbo {
+  NavAutoModule *_navAutoModule;
+}
 
 #ifdef RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
@@ -29,5 +33,25 @@
   return std::make_shared<facebook::react::NativeNavAutoModuleSpecJSI>(params);
 }
 #endif
+
+- (instancetype)init {
+  if (self = [super init]) {
+    _navAutoModule = [[NavAutoModule alloc] init];
+  }
+  return self;
+}
+
++ (NSString *)moduleName {
+  return @"NavAutoModule";
+}
+
+// Forward all method calls to the existing NavAutoModule
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
+  return [_navAutoModule methodSignatureForSelector:aSelector];
+}
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation {
+  [anInvocation invokeWithTarget:_navAutoModule];
+}
 
 @end

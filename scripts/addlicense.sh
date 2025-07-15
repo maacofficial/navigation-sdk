@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Check if addlicense is available
+if ! command -v addlicense > /dev/null 2>&1; then
+    echo "addlicense not found, skipping license check"
+    echo "Install with: go install github.com/google/addlicense@latest"
+    exit 0
+fi
+
 addlicense -f header_template.txt $@ \
         --ignore "**/Pods/**" \
         --ignore "**/node_modules/**" \

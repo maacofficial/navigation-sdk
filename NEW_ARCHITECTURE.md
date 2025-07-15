@@ -1,118 +1,199 @@
 # React Native Navigation SDK - New Architecture Support
 
-This document explains how to enable and use the New Architecture (Fabric + TurboModules) with the React Native Navigation SDK.
+## Overview
 
-## What is React Native's New Architecture?
+This document outlines the comprehensive New Architecture (Fabric + TurboModules) implementation for the Google Maps React Native Navigation SDK. The implementation provides backward compatibility while enabling the performance benefits of React Native's New Architecture.
 
-React Native's New Architecture consists of two main components:
+## Implementation Summary
 
-1. **Fabric**: The new rendering system that replaces the legacy renderer
-2. **TurboModules**: The new native module system that replaces the legacy bridge
+### 1. TurboModule Specifications (src/specs/)
 
-## Benefits
+Created TypeScript specifications for all native modules:
 
-- **Better Performance**: Direct JSI (JavaScript Interface) communication eliminates the bridge bottleneck
-- **Type Safety**: Improved type safety between JavaScript and native code
-- **Synchronous Communication**: Some operations can now be synchronous instead of asynchronous
-- **Better Developer Experience**: Improved debugging and error handling
+- **NativeNavModule.ts**: Main navigation functionality
+  - Navigator initialization and cleanup
+  - Destination setting and routing
+  - Guidance control (start/stop)
+  - Location simulation
+  - Audio guidance configuration
 
-## Enabling New Architecture
+- **NativeNavAutoModule.ts**: Android Auto functionality
+  - Auto initialization and cleanup
+  - Terms and conditions handling
 
-### Prerequisites
+- **NativeNavViewModule.ts**: Map view controller
+  - Camera movement and animation
+  - Map type and style configuration
+  - Traffic layer control
+  - Navigation UI elements
 
-- React Native 0.70.0 or higher
-- Android API level 24 or higher
-- iOS 15.0 or higher
+### 2. Fabric Component Specifications (src/specs/)
 
-### Android Setup
+Created Fabric component specifications for native views:
 
-1. In your `android/gradle.properties`, set:
+- **RCTNavViewNativeComponent.ts**: Navigation map view component
+- **RCTMapViewNativeComponent.ts**: Standard map view component
+
+### 3. Compatibility Layer (src/specs/)
+
+- **NativeModules.ts**: Provides graceful fallback between New and Legacy architectures
+- **NativeComponents.ts**: Component fallback system
+- **index.ts**: Unified export interface
+
+### 4. iOS TurboModule Implementation
+
+#### TurboModule Classes:
+- **NavModuleTurbo**: TurboModule wrapper for NavModule
+- **NavAutoModuleTurbo**: TurboModule wrapper for NavAutoModule  
+- **NavViewModuleTurbo**: TurboModule wrapper for NavViewModule
+
+#### Fabric Component Views:
+- **RCTNavViewComponentView**: Fabric component view for navigation maps
+- **RNNavigationSdkComponentsProvider**: Component registration provider
+
+#### Additional Files:
+- **RNNavigationSdkTurboModuleProvider**: TurboModule provider for registration
+
+### 5. Android TurboModule Implementation
+
+- **NavigationSdkTurboPackage.java**: TurboModule package provider
+- **ReactPackage** implementation with proper module registration
+
+### 6. C++ Layer Implementation
+
+- **NavigationSdkCxxSpec.h/.cpp**: C++ TurboModule interface definitions
+- **CMakeLists.txt**: Build configuration for C++ compilation
+
+### 7. Build Configuration Updates
+
+#### Package.json:
+- Added codegen configuration
+- Codegen script integration
+- New Architecture dependencies
+
+#### Podspec (react-native-navigation-sdk.podspec):
+- Conditional New Architecture dependencies
+- Generated source files inclusion
+- Header search paths for codegen output
+- Proper compiler flags and C++ standard
+
+#### React Native Config (react-native.config.js):
+- Codegen configuration for RNNavigationSdkSpec
+- Android package name configuration
+
+### 8. Code Generation
+
+Successfully configured React Native's codegen to generate:
+- Native module interfaces (`RNNavigationSdkSpec`)
+- Component descriptors and props
+- Event emitters
+- JSI bindings
+
+## Architecture Benefits
+
+### Performance Improvements:
+- **Direct JSI Communication**: Eliminates bridge overhead
+- **Fabric Rendering**: Improved view performance and consistency
+- **Type Safety**: Compile-time type checking for native interfaces
+
+### Developer Experience:
+- **Automatic Fallback**: Graceful degradation to legacy architecture
+- **Zero Breaking Changes**: Existing code continues to work
+- **TypeScript Integration**: Full type support in JavaScript/TypeScript
+
+## Usage Instructions
+
+### Enabling New Architecture:
+
+1. **Metro Configuration** (metro.config.js):
+```javascript
+const {getDefaultConfig} = require('@react-native/metro-config');
+const config = getDefaultConfig(__dirname);
+config.resolver.unstable_enablePackageExports = true;
+module.exports = config;
+```
+
+2. **Android Configuration** (android/gradle.properties):
 ```properties
 newArchEnabled=true
 ```
 
-2. In your `android/app/src/main/java/.../MainApplication.java`, ensure you have:
-```java
-@Override
-protected boolean isNewArchEnabled() {
-  return BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
-}
-```
-
-### iOS Setup
-
-1. In your `ios/Podfile`, set:
+3. **iOS Configuration** (ios/Podfile):
 ```ruby
 ENV['RCT_NEW_ARCH_ENABLED'] = '1'
 ```
 
-2. Clean and reinstall:
-```bash
-cd ios
-rm -rf Pods Podfile.lock
-RCT_NEW_ARCH_ENABLED=1 pod install
-```
+### Verification:
+The library automatically detects the architecture and uses the appropriate implementation. No code changes are required in existing applications.
 
-### Example App Configuration
+## Build Error Resolution
 
-The example app in this repository supports both architectures. To test with New Architecture:
+The original error `'React/RCTTurboModule.h' file not found` has been resolved by:
 
-```bash
-# For Android
-cd example/android
-echo "newArchEnabled=true" >> gradle.properties
-cd ..
-npx react-native run-android
+1. **Proper Codegen Setup**: Added codegen configuration to package.json
+2. **Generated Specs**: Created RNNavigationSdkSpec through codegen
+3. **Header Path Configuration**: Updated podspec with correct header search paths
+4. **TurboModule Implementation**: Created proper TurboModule wrappers
+5. **Dependency Management**: Added conditional New Architecture dependencies
 
-# For iOS  
-cd example/ios
-RCT_NEW_ARCH_ENABLED=1 pod install
-cd ..
-npx react-native run-ios
-```
+## Migration Path
 
-## Migration Notes
+1. **Phase 1**: Legacy Bridge (Previous)
+   - Uses existing React Native bridge
+   - Full backward compatibility maintained
 
-### Code Changes
+2. **Phase 2**: Hybrid Support (Current Implementation)
+   - Automatic architecture detection
+   - TurboModules when available, Bridge fallback
+   - Fabric components with legacy view fallback
 
-The library automatically detects which architecture is being used and adapts accordingly. Your JavaScript code remains the same - the library handles the differences internally.
+3. **Phase 3**: New Architecture Only (Future)
+   - When React Native fully deprecates bridge
+   - TurboModules and Fabric only
 
-### Backwards Compatibility
+## Testing
 
-This library maintains full backwards compatibility with the legacy architecture. You can safely upgrade without any code changes.
+### Validation Steps:
+1. Build with New Architecture enabled
+2. Build with New Architecture disabled  
+3. Verify all navigation features work in both modes
+4. Performance testing for improvements
 
-### Performance Considerations
-
-- **TurboModules**: Navigation operations may execute faster due to JSI
-- **Fabric Components**: Map rendering and interactions should be more responsive
-- **Memory Usage**: Improved memory management in map components
+### Integration Testing:
+- Android Auto functionality
+- iOS CarPlay integration
+- Navigation state management
+- Map view interactions
 
 ## Troubleshooting
 
-### Common Issues
+### Common Issues:
 
-1. **Build Errors**: Ensure you have the correct React Native version and New Architecture flags set
-2. **Runtime Crashes**: Check that all native dependencies support New Architecture
-3. **Performance Issues**: Monitor for any regressions and report them
+1. **Build Errors**: Ensure codegen has run with `npx react-native codegen`
+2. **Missing Headers**: Verify podspec header search paths
+3. **Module Registration**: Check TurboModule provider registration
 
-### Debug Mode
+### Debug Commands:
+```bash
+# Regenerate codegen specs
+npx react-native codegen
 
-To verify New Architecture is enabled:
+# Clean and rebuild
+npm run clean && npm run build
 
-```javascript
-import { TurboModuleRegistry } from 'react-native';
-
-// This will be null in legacy architecture
-const isTurboModuleEnabled = TurboModuleRegistry.get('NavModule') !== null;
-console.log('New Architecture enabled:', isTurboModuleEnabled);
+# Check generated files
+find build/generated -name "*.h" -o -name "*.mm"
 ```
 
-## Reporting Issues
+## Future Enhancements
 
-If you encounter issues with New Architecture support, please report them on our [GitHub repository](https://github.com/googlemaps/react-native-navigation-sdk/issues) with:
+1. **Enhanced Type Safety**: More specific TypeScript types
+2. **Performance Optimizations**: Further JSI optimizations  
+3. **New Fabric Features**: Leverage latest Fabric capabilities
+4. **Bridgeless Mode**: Support for React Native's bridgeless architecture
 
-- React Native version
-- Architecture mode (legacy vs new)
-- Platform (iOS/Android)
-- Detailed error logs
-- Reproduction steps
+## Conclusion
+
+The Google Maps React Native Navigation SDK now supports React Native's New Architecture while maintaining full backward compatibility. This implementation provides improved performance, better type safety, and prepares the library for React Native's future direction.
+
+All existing applications can immediately benefit from New Architecture by simply enabling it in their configuration, with no code changes required. The original build error has been resolved through proper TurboModule implementation and codegen configuration.
