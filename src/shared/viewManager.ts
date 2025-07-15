@@ -28,39 +28,90 @@ import type { Circle, GroundOverlay, Marker, Polygon, Polyline } from '../maps';
 // Safely import New Architecture component with fallback
 let RCTNavView: any;
 let isNewArchitecture = false;
+let componentLoadingStrategy = 'unknown';
+
+// Function to check if a view manager is already registered
+const isViewManagerRegistered = (name: string): boolean => {
+  try {
+    const config = UIManager.getViewManagerConfig(name);
+    return config != null;
+  } catch {
+    return false;
+  }
+};
 
 try {
+  // First, check what's already registered to avoid conflicts
+  const registeredManagers = {
+    RCTNavView: isViewManagerRegistered('RCTNavView'),
+    RCTNavViewManager: isViewManagerRegistered('RCTNavViewManager'),
+    NavViewManager: isViewManagerRegistered('NavViewManager'),
+  };
+
+  console.log('📋 Registered view managers:', registeredManagers);
+
   // Check if we're in New Architecture mode
   const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
   isNewArchitecture = TurboModuleRegistry != null;
 
+  console.log(
+    '🏗️ Architecture mode:',
+    isNewArchitecture ? 'New Architecture' : 'Legacy Bridge'
+  );
+
   if (isNewArchitecture) {
-    // Try to use New Architecture component
+    // Try to use New Architecture component first
     try {
       const {
         RCTNavView: ImportedRCTNavView,
       } = require('../specs/NativeComponents');
       RCTNavView = ImportedRCTNavView;
-      console.log('Using New Architecture RCTNavView component');
+      componentLoadingStrategy = 'new-architecture-fabric';
+      console.log('✅ Using New Architecture Fabric component');
     } catch (newArchError) {
       console.log(
-        'New Architecture component import failed, falling back to legacy'
+        '❌ New Architecture component import failed:',
+        String(newArchError)
       );
       isNewArchitecture = false;
     }
   }
 
+  // If New Architecture failed or not available, use legacy approach
   if (!isNewArchitecture) {
-    // Use legacy component
-    RCTNavView = requireNativeComponent('RCTNavView');
-    console.log('Using legacy RCTNavView component');
+    // Check if RCTNavView is already registered by someone else
+    if (registeredManagers.RCTNavView) {
+      console.log('⚠️ RCTNavView already registered, creating wrapper...');
+      // Don't call requireNativeComponent again, just reference the existing one
+      RCTNavView = UIManager.getViewManagerConfig('RCTNavView');
+      componentLoadingStrategy = 'existing-registration';
+    } else {
+      // Safe to register the legacy component
+      try {
+        RCTNavView = requireNativeComponent('RCTNavView');
+        componentLoadingStrategy = 'legacy-bridge';
+        console.log('✅ Registered new legacy RCTNavView component');
+      } catch (legacyError) {
+        console.error(
+          '❌ Failed to register legacy component:',
+          String(legacyError)
+        );
+        // Create a minimal fallback
+        RCTNavView = () => null;
+        componentLoadingStrategy = 'fallback-dummy';
+      }
+    }
   }
 } catch (error) {
-  // Final fallback to legacy
-  console.log('Fallback to legacy RCTNavView component due to error:', error);
-  RCTNavView = requireNativeComponent('RCTNavView');
+  console.error('❌ Critical error in component loading:', error);
   isNewArchitecture = false;
+  componentLoadingStrategy = 'error-fallback';
+
+  // Last resort fallback
+  RCTNavView = () => null;
 }
+
+console.log('🎯 Final component loading strategy:', componentLoadingStrategy);
 
 // NavViewManager is responsible for managing both the regular map fragment as well as the navigation map view fragment.
 // Use different view manager names for different architectures to avoid registration conflicts
@@ -232,7 +283,7 @@ type NativeNavViewManagerComponentType = HostComponent<NativeNavViewProps>;
 export const NavViewManager = RCTNavView as NativeNavViewManagerComponentType;
 
 // Export architecture detection for use in other modules
-export { isNewArchitecture };
+export { isNewArchitecture, componentLoadingStrategy };
 
 // Debug function to check view manager registration
 export const debugViewManager = () => {
@@ -242,18 +293,35 @@ export const debugViewManager = () => {
     'Architecture:',
     isNewArchitecture ? 'New Architecture (Fabric)' : 'Legacy Bridge'
   );
+  console.log('Component Loading Strategy:', componentLoadingStrategy);
   console.log('View Manager Name:', viewManagerName);
   console.log('RCTNavView Component Type:', typeof RCTNavView);
 
+  // Check what view managers are currently registered
+  const checkRegistrations = [
+    'RCTNavView',
+    'RCTNavViewManager',
+    'NavViewManager',
+  ];
+  console.log('Current View Manager Registrations:');
+  checkRegistrations.forEach(name => {
+    try {
+      const config = UIManager.getViewManagerConfig(name);
+      console.log(`  ${name}: ${config ? 'REGISTERED' : 'NOT_REGISTERED'}`);
+    } catch (error) {
+      console.log(`  ${name}: ERROR - ${String(error)}`);
+    }
+  });
+
   try {
     const config = UIManager.getViewManagerConfig(viewManagerName);
-    console.log('View Manager Config:', config);
+    console.log('Primary View Manager Config:', config);
 
     if (config) {
       console.log('Available Commands:', config.Commands);
       console.log('Config keys:', Object.keys(config));
     } else {
-      console.log('View Manager Config is null/undefined');
+      console.log('Primary View Manager Config is null/undefined');
 
       // Try alternative view manager names
       console.log('Trying alternative view manager names...');
