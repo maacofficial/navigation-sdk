@@ -145,18 +145,8 @@ export interface NativeProps extends ViewProps, MapViewCallbacks {
 }
 
 // Export the component with error handling for dual registration
-let RCTNavViewComponent: any;
-
-try {
-  RCTNavViewComponent = codegenNativeComponent<NativeProps>('RCTNavView');
-} catch (error) {
-  console.warn(
-    'RCTNavView codegen registration issue (likely already registered):',
-    String(error)
-  );
-  // In case of dual registration, export the component name as string
-  // This will be handled by the viewManager.ts
-  RCTNavViewComponent = 'RCTNavView';
-}
+// Export the codegen component directly
+// The component registration is handled by the Fabric ComponentsProvider in iOS
+const RCTNavViewComponent = codegenNativeComponent<NativeProps>('RCTNavView');
 
 export default RCTNavViewComponent;

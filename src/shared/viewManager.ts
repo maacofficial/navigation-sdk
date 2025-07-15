@@ -162,10 +162,12 @@ try {
       try {
         console.log('🏗️ Attempting legacy Bridge component loading');
 
-        // Now that iOS exports as 'RCTNavView', we can use the consistent name
-        RCTNavView = requireNativeComponent('RCTNavView');
+        // iOS exports as 'RCTNavViewManager' by default
+        const componentName =
+          Platform.OS === 'ios' ? 'RCTNavViewManager' : 'RCTNavView';
+        RCTNavView = requireNativeComponent(componentName);
         componentLoadingStrategy = 'legacy-bridge';
-        console.log('✅ Successfully loaded legacy RCTNavView component');
+        console.log(`✅ Successfully loaded legacy ${componentName} component`);
         componentRegistry.set('RCTNavView', RCTNavView);
       } catch (legacyError) {
         console.log(
@@ -176,10 +178,10 @@ try {
         // Try alternative name for iOS Legacy Bridge as fallback
         if (Platform.OS === 'ios') {
           try {
-            console.log('🔄 Trying iOS fallback: RCTNavViewManager');
-            RCTNavView = requireNativeComponent('RCTNavViewManager');
+            console.log('🔄 Trying iOS fallback: RCTNavView');
+            RCTNavView = requireNativeComponent('RCTNavView');
             componentLoadingStrategy = 'legacy-bridge-ios-alt';
-            console.log('✅ Successfully loaded RCTNavViewManager component');
+            console.log('✅ Successfully loaded RCTNavView component');
             componentRegistry.set('RCTNavView', RCTNavView);
           } catch (iosError) {
             console.log(
@@ -257,12 +259,13 @@ console.log('  📊 Component Registry Size:', componentRegistry.size);
 
 // Try to check if the native module is properly linked
 try {
-  const config = UIManager.getViewManagerConfig('RCTNavView');
+  const configName = Platform.OS === 'ios' ? 'RCTNavViewManager' : 'RCTNavView';
+  const config = UIManager.getViewManagerConfig(configName);
   if (config) {
-    console.log('  ✅ Native view config found');
+    console.log(`  ✅ Native view config found for ${configName}`);
     console.log('  🔧 Available commands:', Object.keys(config.Commands || {}));
   } else {
-    console.log('  ⚠️ No native view config found');
+    console.log(`  ⚠️ No native view config found for ${configName}`);
   }
 } catch (error) {
   console.log('  ❌ Error checking native view config:', String(error));
@@ -297,9 +300,8 @@ export const viewManagerName = (() => {
   if (Platform.OS === 'android') {
     return 'NavViewManager';
   } else {
-    // iOS: For legacy bridge, the view manager is registered as 'RCTNavViewManager'
-    // For New Architecture (Fabric), it should use the component name from specs
-    return isNewArchitecture ? 'RCTNavView' : 'RCTNavViewManager';
+    // iOS: The class RCTNavViewManager exports as 'RCTNavViewManager' by default
+    return 'RCTNavViewManager';
   }
 })();
 
@@ -308,7 +310,8 @@ export const alternativeViewManagerNames = (() => {
   if (Platform.OS === 'android') {
     return ['NavViewManager'];
   } else {
-    return ['RCTNavViewManager', 'RCTNavView', 'NavView'];
+    // iOS: Primary is RCTNavViewManager, keep RCTNavView as fallback
+    return ['RCTNavView', 'NavView'];
   }
 })();
 
