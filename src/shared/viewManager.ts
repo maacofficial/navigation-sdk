@@ -106,32 +106,32 @@ try {
     );
 
     if (isNewArchitecture) {
-      // Try to use New Architecture component first - import directly to avoid triggering bridge registration
+      // For New Architecture, use requireNativeComponent directly for Fabric
+      // This ensures proper registration with the Fabric renderer
       try {
-        const {
-          default: RCTNavViewFabric,
-        } = require('../specs/RCTNavViewNativeComponent');
-        RCTNavView = RCTNavViewFabric;
+        RCTNavView = requireNativeComponent('RCTNavView');
         componentLoadingStrategy = 'new-architecture-fabric';
-        console.log('✅ Using New Architecture Fabric component');
+        console.log(
+          '✅ Using New Architecture Fabric component via requireNativeComponent'
+        );
         componentRegistry.set('RCTNavView', RCTNavView);
       } catch (newArchError) {
         console.log(
-          '❌ New Architecture component import failed:',
+          '❌ New Architecture requireNativeComponent failed:',
           String(newArchError)
         );
-        // For New Architecture, try requireNativeComponent as fallback
-        // This ensures the component gets properly registered with Fabric
+        // Try importing the codegen spec as fallback
         try {
-          RCTNavView = requireNativeComponent('RCTNavView');
-          componentLoadingStrategy = 'new-architecture-fallback';
-          console.log(
-            '✅ Using New Architecture requireNativeComponent fallback'
-          );
+          const {
+            default: RCTNavViewFabric,
+          } = require('../specs/RCTNavViewNativeComponent');
+          RCTNavView = RCTNavViewFabric;
+          componentLoadingStrategy = 'new-architecture-codegen';
+          console.log('✅ Using New Architecture codegen component');
           componentRegistry.set('RCTNavView', RCTNavView);
         } catch (fallbackError) {
           console.log(
-            '❌ New Architecture fallback failed:',
+            '❌ New Architecture codegen fallback failed:',
             String(fallbackError)
           );
           isNewArchitecture = false;

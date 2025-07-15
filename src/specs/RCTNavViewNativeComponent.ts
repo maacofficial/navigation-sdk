@@ -144,4 +144,7 @@ export interface NativeProps extends ViewProps, MapViewCallbacks {
   navigationFooterTouchEventsEnabled?: WithDefault<boolean, false>;
 }
 
-export default codegenNativeComponent<NativeProps>('RCTNavView');
+export default codegenNativeComponent<NativeProps>('RCTNavView', {
+  interfaceOnly: true,
+  paperComponentName: 'RCTNavView',
+});
