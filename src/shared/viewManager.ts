@@ -69,12 +69,12 @@ try {
     );
 
     if (isNewArchitecture) {
-      // Try to use New Architecture component first
+      // Try to use New Architecture component first - import directly to avoid triggering bridge registration
       try {
         const {
-          RCTNavView: ImportedRCTNavView,
-        } = require('../specs/NativeComponents');
-        RCTNavView = ImportedRCTNavView;
+          default: RCTNavViewFabric,
+        } = require('../specs/RCTNavViewNativeComponent');
+        RCTNavView = RCTNavViewFabric;
         componentLoadingStrategy = 'new-architecture-fabric';
         console.log('✅ Using New Architecture Fabric component');
         componentRegistry.set('RCTNavView', RCTNavView);
