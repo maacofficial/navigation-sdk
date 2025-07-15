@@ -124,12 +124,12 @@ public class NavigationSdkTurboPackage extends TurboReactPackage implements View
   @Override
   @NonNull
   protected List<ViewManager> createViewManagers(@NonNull ReactApplicationContext reactContext) {
-    return Arrays.<ViewManager>asList(new RCTNavViewManager());
+    return Arrays.<ViewManager>asList(NavViewManager.getInstance(reactContext));
   }
 
   @Override
   public List<String> getViewManagerNames(ReactApplicationContext reactContext) {
-    return Arrays.asList("RCTNavView", "RCTMapView");
+    return Arrays.asList("RCTNavView", "NavViewManager");
   }
 
   @Override
@@ -137,9 +137,8 @@ public class NavigationSdkTurboPackage extends TurboReactPackage implements View
       ReactApplicationContext reactContext, String viewManagerName) {
     switch (viewManagerName) {
       case "RCTNavView":
-        return new RCTNavViewManager();
-      case "RCTMapView": 
-        return new RCTMapViewManager();
+      case "NavViewManager":
+        return NavViewManager.getInstance(reactContext);
       default:
         throw new IllegalArgumentException("Unknown view manager: " + viewManagerName);
     }

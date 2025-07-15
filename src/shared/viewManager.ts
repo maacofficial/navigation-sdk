@@ -123,33 +123,24 @@ try {
           console.log('✅ Using New Architecture codegen component');
           componentRegistry.set('RCTNavView', RCTNavView);
         } else if (typeof RCTNavViewCodegen === 'string') {
-          // If codegen returns a string, create a safe requireNativeComponent call
-          // that doesn't trigger dual registration
+          // If codegen returns a string, it means codegen didn't run properly
+          // Fall back to requireNativeComponent which should work for both architectures
           console.log(`🔍 Codegen returned string: ${RCTNavViewCodegen}`);
 
           try {
-            // Use a safe require approach that checks for existing registration first
-            const React = require('react');
-
-            // Create a component that safely forwards to the native component
-            RCTNavView = React.forwardRef((props: any, ref: any) => {
-              // Use React.createElement with the component name directly
-              // This avoids registration issues while still creating the component
-              return React.createElement(RCTNavViewCodegen, {
-                ...props,
-                ref,
-              });
-            });
-
-            componentLoadingStrategy = 'new-architecture-forward-ref';
-            console.log('✅ Using New Architecture component via forwardRef');
-            componentRegistry.set('RCTNavView', RCTNavView);
-          } catch (forwardRefError) {
+            // Use requireNativeComponent as fallback - this will work in both architectures
+            RCTNavView = requireNativeComponent(RCTNavViewCodegen);
+            componentLoadingStrategy = 'new-architecture-require-fallback';
             console.log(
-              '❌ ForwardRef approach failed:',
-              String(forwardRefError)
+              '✅ Using requireNativeComponent fallback for New Architecture'
             );
-            throw forwardRefError;
+            componentRegistry.set('RCTNavView', RCTNavView);
+          } catch (requireError) {
+            console.log(
+              '❌ requireNativeComponent fallback failed:',
+              String(requireError)
+            );
+            throw requireError;
           }
         } else {
           throw new Error(
