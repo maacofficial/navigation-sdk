@@ -134,13 +134,13 @@ try {
             );
 
             const React = require('react');
-            const { Text } = require('react-native');
+            const { View, Text } = require('react-native');
             RCTNavView = React.forwardRef((props: any, ref: any) => {
               console.warn(
                 'Using proxy component - corrupted native registration detected'
               );
               return React.createElement(
-                'View',
+                View,
                 {
                   ...props,
                   ref,
@@ -175,13 +175,13 @@ try {
           );
           // Component exists but config check failed - also treat as corrupted
           const React = require('react');
-          const { Text } = require('react-native');
+          const { View, Text } = require('react-native');
           RCTNavView = React.forwardRef((props: any, ref: any) => {
             console.warn(
               'Using proxy component - config check failed for existing registration'
             );
             return React.createElement(
-              'View',
+              View,
               {
                 ...props,
                 ref,
@@ -224,11 +224,11 @@ try {
 
         // Create a safe proxy component that indicates dual registration conflict
         const React = require('react');
-        const { Text } = require('react-native');
+        const { View, Text } = require('react-native');
         RCTNavView = React.forwardRef((props: any, ref: any) => {
           console.warn('Using proxy component due to registration conflict');
           return React.createElement(
-            'View',
+            View,
             {
               ...props,
               ref,
@@ -334,14 +334,14 @@ try {
 
           // Create a safe fallback component
           const React = require('react');
-          const { Text } = require('react-native');
+          const { View, Text } = require('react-native');
 
           RCTNavView = React.forwardRef((props: any, ref: any) => {
             console.warn(
               'Using fallback component - native implementation may not be available'
             );
             return React.createElement(
-              'View',
+              View,
               {
                 ...props,
                 ref,
