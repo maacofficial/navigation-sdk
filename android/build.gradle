@@ -1,0 +1,93 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import groovy.json.JsonSlurper
+
+buildscript {
+    ext.kotlin_version = '2.0.0'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.4.0")
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+def isNewArchitectureEnabled() {
+  return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
+}
+
+apply plugin: 'com.android.library'
+
+if (isNewArchitectureEnabled()) {
+  apply plugin: "com.facebook.react"
+}
+
+android {
+    namespace "com.google.android.react.navsdk"
+    compileSdkVersion 34
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        minSdkVersion 24
+        targetSdkVersion 34
+        versionCode 1
+        // get version name from package.json version
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+        minifyEnabled true
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+        disable "GradleCompatible"
+    }
+    
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+            version "3.18.1"
+        }
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "androidx.car.app:app:1.4.0"
+    implementation "androidx.car.app:app-projected:1.4.0"
+    implementation 'com.facebook.react:react-native:+'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation "com.google.android.libraries.navigation:navigation:6.1.0"
+    api 'com.google.guava:guava:31.0.1-android'
+
+    if (isNewArchitectureEnabled()) {
+        implementation "com.facebook.react:react-android"
+        implementation "com.facebook.react:hermes-android"
+    }
+}
