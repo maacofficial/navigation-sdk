@@ -16,6 +16,13 @@
 
 require "json"
 
+# The following is required for the New Architecture, and is used to find the headers for React Native.
+# It's copied from https://github.com/facebook/react-native/blob/main/packages/react-native/template/ios/Podfile
+# and is not part of the react-native-navigation-sdk template.
+def find_react_native_root()
+  # ...
+end
+
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 folly_compiler_flags = '-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1 -Wno-comma -Wno-shorten-64-to-32'
 
@@ -37,8 +44,14 @@ Pod::Spec.new do |s|
   if ENV['RCT_NEW_ARCH_ENABLED'] == '1' then
     s.compiler_flags = folly_compiler_flags + " -DRCT_NEW_ARCH_ENABLED=1"
     s.pod_target_xcconfig    = {
-        "HEADER_SEARCH_PATHS" => "\"$(PODS_ROOT)/boost\" \"$(PODS_ROOT)/Headers/Private/React-Codegen\" \"$(PODS_ROOT)/Headers/Public/React-Codegen\" \"$(PODS_ROOT)/Headers/Public/ReactCommon\" \"$(PODS_ROOT)/Headers/Public/React-Core\" \"$(PODS_ROOT)/Headers/Private/React-Core\" \"$(PODS_ROOT)/Headers/Public/React-Fabric\" \"$(PODS_ROOT)/Headers/Public/React-jsi\" \"$(PODS_ROOT)/Headers/Public/React-rncore\" \"$(PODS_ROOT)/Headers/Public/RCT-Folly\" \"$(PODS_TARGET_SRCROOT)/build/generated/ios\"",
-        "OTHER_CPLUSPLUSFLAGS" => "-DFOLLY_NO_CONFIG -DFOLLY_MOBILE=1 -DFOLLY_USE_LIBCPP=1",
+        "HEADER_SEARCH_PATHS" => "\"$(PODS_TARGET_SRCROOT)/build/generated/ios\" " +
+                                 "\"$(PODS_ROOT)/Headers/Public/React-Codegen\" " +
+                                 "\"$(PODS_ROOT)/React-Codegen/\" " +
+                                 "\"$(PODS_ROOT)/ReactCommon/\" " +
+                                 "\"$(PODS_ROOT)/React-Fabric/\" " +
+                                 "\"$(PODS_ROOT)/React-rncore/\" " +
+                                 "\"$(PODS_ROOT)/RCT-Folly/\" " +
+                                 "\"$(PODS_ROOT)/boost/\" ",
         "CLANG_CXX_LANGUAGE_STANDARD" => "c++17"
     }
     s.dependency "React-Core"
@@ -49,5 +62,7 @@ Pod::Spec.new do |s|
     s.dependency "React-rncore"
     s.dependency "RCT-Folly"
     s.dependency "React-Fabric"
+  else
+    s.dependency "React-Core"
   end
 end
