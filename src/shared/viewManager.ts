@@ -128,45 +128,62 @@ try {
             componentRegistry.set('RCTNavView', RCTNavView);
           } else {
             // Component exists but has no proper view config - it's a corrupted registration
-            // We need to create a safe proxy that doesn't conflict
+            // But let's try to use it anyway since the native side might actually work
             console.log(
-              '⚠️ Found RCTNavView registration but no valid view config, creating proxy'
+              '⚠️ Found RCTNavView registration but no valid view config, attempting to use it anyway'
             );
 
-            const React = require('react');
-            const { View, Text } = require('react-native');
-            RCTNavView = React.forwardRef((props: any, ref: any) => {
-              console.warn(
-                'Using proxy component - corrupted native registration detected'
+            // Try to use the existing component first
+            try {
+              isAlreadyRegistered = true;
+              RCTNavView = testComponent;
+              componentLoadingStrategy = 'existing-registration-forced';
+              console.log(
+                '✅ Using existing RCTNavView registration despite missing view config'
               );
-              return React.createElement(
-                View,
-                {
-                  ...props,
-                  ref,
-                  style: [
-                    props.style,
-                    {
-                      backgroundColor: '#ffe6e6',
-                      minHeight: 150,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderWidth: 2,
-                      borderColor: '#ff9999',
-                      borderStyle: 'dashed',
-                    },
-                  ],
-                },
-                React.createElement(
-                  Text,
-                  { style: { color: '#cc0000', textAlign: 'center' } },
-                  'NavView (Corrupted Registration)\nNative config missing'
-                )
+              componentRegistry.set('RCTNavView', RCTNavView);
+            } catch (useError) {
+              console.log(
+                '❌ Failed to use existing registration, creating proxy:',
+                String(useError)
               );
-            });
-            componentLoadingStrategy = 'corrupted-registration-proxy';
-            componentRegistry.set('RCTNavView', RCTNavView);
-            isAlreadyRegistered = true; // Skip normal registration since something is already there
+
+              // If using the existing component fails, fall back to proxy
+              const React = require('react');
+              const { View, Text } = require('react-native');
+              RCTNavView = React.forwardRef((props: any, ref: any) => {
+                console.warn(
+                  'Using proxy component - corrupted native registration detected'
+                );
+                return React.createElement(
+                  View,
+                  {
+                    ...props,
+                    ref,
+                    style: [
+                      props.style,
+                      {
+                        backgroundColor: '#ffe6e6',
+                        minHeight: 150,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderWidth: 2,
+                        borderColor: '#ff9999',
+                        borderStyle: 'dashed',
+                      },
+                    ],
+                  },
+                  React.createElement(
+                    Text,
+                    { style: { color: '#cc0000', textAlign: 'center' } },
+                    'NavView (Corrupted Registration)\nNative config missing'
+                  )
+                );
+              });
+              componentLoadingStrategy = 'corrupted-registration-proxy';
+              componentRegistry.set('RCTNavView', RCTNavView);
+              isAlreadyRegistered = true;
+            }
           }
         } catch (configError) {
           console.log(
@@ -332,36 +349,27 @@ try {
             String(legacyError)
           );
 
-          // Create a safe fallback component
-          const React = require('react');
-          const { View, Text } = require('react-native');
+          // Try alternative name for iOS Legacy Bridge
+          if (Platform.OS === 'ios') {
+            try {
+              console.log('🔄 Trying iOS-specific view manager name');
+              RCTNavView = requireNativeComponent('RCTNavViewManager');
+              componentLoadingStrategy = 'legacy-bridge-ios-alt';
+              console.log('✅ Successfully loaded RCTNavViewManager component');
+              componentRegistry.set('RCTNavView', RCTNavView);
+            } catch (iosError) {
+              console.log(
+                '❌ iOS alternative requireNativeComponent failed:',
+                String(iosError)
+              );
 
-          RCTNavView = React.forwardRef((props: any, ref: any) => {
-            console.warn(
-              'Using fallback component - native implementation may not be available'
-            );
-            return React.createElement(
-              View,
-              {
-                ...props,
-                ref,
-                style: [
-                  props.style,
-                  {
-                    backgroundColor: '#f0f0f0',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    minHeight: 200,
-                  },
-                ],
-              },
-              React.createElement(Text, {}, 'Navigation View (Fallback)')
-            );
-          });
-
-          componentLoadingStrategy = 'legacy-safe-fallback';
-          console.log('✅ Using safe legacy fallback component');
-          componentRegistry.set('RCTNavView', RCTNavView);
+              // Create fallback component
+              createLegacyFallbackComponent();
+            }
+          } else {
+            // Create fallback component for other platforms
+            createLegacyFallbackComponent();
+          }
         }
       }
     }
@@ -373,6 +381,41 @@ try {
 
   // Last resort fallback
   RCTNavView = () => null;
+  componentRegistry.set('RCTNavView', RCTNavView);
+}
+
+/**
+ * Helper function to create legacy fallback component
+ */
+function createLegacyFallbackComponent() {
+  const React = require('react');
+  const { View, Text } = require('react-native');
+
+  RCTNavView = React.forwardRef((props: any, ref: any) => {
+    console.warn(
+      'Using fallback component - native implementation may not be available'
+    );
+    return React.createElement(
+      View,
+      {
+        ...props,
+        ref,
+        style: [
+          props.style,
+          {
+            backgroundColor: '#f0f0f0',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 200,
+          },
+        ],
+      },
+      React.createElement(Text, {}, 'Navigation View (Fallback)')
+    );
+  });
+
+  componentLoadingStrategy = 'legacy-safe-fallback';
+  console.log('✅ Using safe legacy fallback component');
   componentRegistry.set('RCTNavView', RCTNavView);
 }
 
