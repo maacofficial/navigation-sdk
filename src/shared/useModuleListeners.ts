@@ -41,7 +41,20 @@ export const useModuleListeners = <
 
   const getIOSEventEmitter = useCallback(() => {
     if (!eventEmitterRef.current) {
-      eventEmitterRef.current = new NativeEventEmitter(dispatcher);
+      // Check if dispatcher is valid before creating NativeEventEmitter
+      if (!dispatcher) {
+        console.warn(
+          'useModuleListeners: dispatcher is null or undefined, creating dummy event emitter'
+        );
+        // Create a dummy event emitter that won't crash
+        eventEmitterRef.current = {
+          addListener: () => ({ remove: () => {} }),
+          removeAllListeners: () => {},
+          removeSubscription: () => {},
+        } as any;
+      } else {
+        eventEmitterRef.current = new NativeEventEmitter(dispatcher);
+      }
     }
     return eventEmitterRef.current;
   }, [dispatcher]);
@@ -77,13 +90,20 @@ export const useModuleListeners = <
       const BatchedBridge = require('react-native/Libraries/BatchedBridge/BatchedBridge');
       BatchedBridge.registerCallableModule(androidBridge, wrappedListeners);
     } else if (Platform.OS === 'ios') {
-      eventTypes.forEach(eventType => {
-        getIOSEventEmitter().removeAllListeners(eventType as string);
-        getIOSEventEmitter().addListener(
-          eventType as string,
-          wrappedListeners[eventType]!
+      const eventEmitter = getIOSEventEmitter();
+      if (eventEmitter && typeof eventEmitter.addListener === 'function') {
+        eventTypes.forEach(eventType => {
+          eventEmitter.removeAllListeners(eventType as string);
+          eventEmitter.addListener(
+            eventType as string,
+            wrappedListeners[eventType]!
+          );
+        });
+      } else {
+        console.warn(
+          'useModuleListeners: EventEmitter not available on iOS, events will not work'
         );
-      });
+      }
     }
   }, [eventTypes, androidBridge, getIOSEventEmitter, eventTransformer]);
 

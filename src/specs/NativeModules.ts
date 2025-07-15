@@ -44,5 +44,21 @@ try {
 export const NavModule = NavModuleTurbo ?? NativeModules.NavModule;
 export const NavAutoModule = NavAutoModuleTurbo ?? NativeModules.NavAutoModule;
 export const NavViewModule = NavViewModuleTurbo ?? NativeModules.NavViewModule;
-export const NavEventDispatcher = NativeModules.NavEventDispatcher;
-export const NavAutoEventDispatcher = NativeModules.NavAutoEventDispatcher;
+
+// Event dispatchers with null safety
+export const NavEventDispatcher = NativeModules.NavEventDispatcher ?? null;
+export const NavAutoEventDispatcher =
+  NativeModules.NavAutoEventDispatcher ?? null;
+
+// Log warnings if event dispatchers are not available
+if (!NavEventDispatcher) {
+  console.warn(
+    'NavEventDispatcher is not available - navigation events may not work properly'
+  );
+}
+
+if (!NavAutoEventDispatcher) {
+  console.warn(
+    'NavAutoEventDispatcher is not available - auto navigation events may not work properly'
+  );
+}
