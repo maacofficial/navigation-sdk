@@ -144,4 +144,19 @@ export interface NativeProps extends ViewProps, MapViewCallbacks {
   navigationFooterTouchEventsEnabled?: WithDefault<boolean, false>;
 }
 
-export default codegenNativeComponent<NativeProps>('RCTNavView');
+// Export the component with error handling for dual registration
+let RCTNavViewComponent: any;
+
+try {
+  RCTNavViewComponent = codegenNativeComponent<NativeProps>('RCTNavView');
+} catch (error) {
+  console.warn(
+    'RCTNavView codegen registration issue (likely already registered):',
+    String(error)
+  );
+  // In case of dual registration, export the component name as string
+  // This will be handled by the viewManager.ts
+  RCTNavViewComponent = 'RCTNavView';
+}
+
+export default RCTNavViewComponent;
