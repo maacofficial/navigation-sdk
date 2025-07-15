@@ -134,6 +134,7 @@ try {
             );
 
             const React = require('react');
+            const { Text } = require('react-native');
             RCTNavView = React.forwardRef((props: any, ref: any) => {
               console.warn(
                 'Using proxy component - corrupted native registration detected'
@@ -157,7 +158,7 @@ try {
                   ],
                 },
                 React.createElement(
-                  'Text',
+                  Text,
                   { style: { color: '#cc0000', textAlign: 'center' } },
                   'NavView (Corrupted Registration)\nNative config missing'
                 )
@@ -174,6 +175,7 @@ try {
           );
           // Component exists but config check failed - also treat as corrupted
           const React = require('react');
+          const { Text } = require('react-native');
           RCTNavView = React.forwardRef((props: any, ref: any) => {
             console.warn(
               'Using proxy component - config check failed for existing registration'
@@ -197,7 +199,7 @@ try {
                 ],
               },
               React.createElement(
-                'Text',
+                Text,
                 { style: { color: '#856404', textAlign: 'center' } },
                 'NavView (Config Error)\nUnable to verify native config'
               )
@@ -222,6 +224,7 @@ try {
 
         // Create a safe proxy component that indicates dual registration conflict
         const React = require('react');
+        const { Text } = require('react-native');
         RCTNavView = React.forwardRef((props: any, ref: any) => {
           console.warn('Using proxy component due to registration conflict');
           return React.createElement(
@@ -243,7 +246,7 @@ try {
               ],
             },
             React.createElement(
-              'Text',
+              Text,
               { style: { color: '#005999', textAlign: 'center' } },
               'NavView (Registration Conflict)\nDual registration detected'
             )
