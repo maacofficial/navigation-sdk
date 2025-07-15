@@ -138,5 +138,13 @@
         }
       ]
     ]
+  },
+  "codegenConfig": {
+    "name": "RNNavigationSdkSpec",
+    "type": "modules",
+    "jsSrcsDir": "src/specs",
+    "android": {
+      "javaPackageName": "com.google.android.react.navsdk"
+    }
   }
 }

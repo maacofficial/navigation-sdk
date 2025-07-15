@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 
-#import "NavModuleTurbo.h"
+#import <Foundation/Foundation.h>
 
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <RNNavigationSdkSpec/RNNavigationSdkSpec.h>
 #endif
 
-@implementation NavModuleTurbo
+#import <React/RCTBridgeModule.h>
+#import "NavAutoModule.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface NavAutoModuleTurbo : NavAutoModule
 
 #ifdef RCT_NEW_ARCH_ENABLED
-- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-    (const facebook::react::ObjCTurboModule::InitParams &)params
-{
-  return std::make_shared<facebook::react::NativeNavModuleSpecJSI>(params);
-}
+<NativeNavAutoModuleSpec>
 #endif
 
 @end
+
+NS_ASSUME_NONNULL_END
