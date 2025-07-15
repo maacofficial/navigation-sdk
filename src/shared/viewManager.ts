@@ -127,18 +127,85 @@ try {
             );
             componentRegistry.set('RCTNavView', RCTNavView);
           } else {
-            // Component exists but has no proper view config - it's a stub registration
+            // Component exists but has no proper view config - it's a corrupted registration
+            // We need to create a safe proxy that doesn't conflict
             console.log(
-              '⚠️ Found RCTNavView registration but no valid view config, proceeding with proper registration'
+              '⚠️ Found RCTNavView registration but no valid view config, creating proxy'
             );
-            // Don't use the existing component, proceed with normal registration
+
+            const React = require('react');
+            RCTNavView = React.forwardRef((props: any, ref: any) => {
+              console.warn(
+                'Using proxy component - corrupted native registration detected'
+              );
+              return React.createElement(
+                'View',
+                {
+                  ...props,
+                  ref,
+                  style: [
+                    props.style,
+                    {
+                      backgroundColor: '#ffe6e6',
+                      minHeight: 150,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 2,
+                      borderColor: '#ff9999',
+                      borderStyle: 'dashed',
+                    },
+                  ],
+                },
+                React.createElement(
+                  'Text',
+                  { style: { color: '#cc0000', textAlign: 'center' } },
+                  'NavView (Corrupted Registration)\nNative config missing'
+                )
+              );
+            });
+            componentLoadingStrategy = 'corrupted-registration-proxy';
+            componentRegistry.set('RCTNavView', RCTNavView);
+            isAlreadyRegistered = true; // Skip normal registration since something is already there
           }
         } catch (configError) {
           console.log(
             '⚠️ Found RCTNavView registration but failed to get view config:',
             String(configError)
           );
-          // Component exists but config check failed, proceed with normal registration
+          // Component exists but config check failed - also treat as corrupted
+          const React = require('react');
+          RCTNavView = React.forwardRef((props: any, ref: any) => {
+            console.warn(
+              'Using proxy component - config check failed for existing registration'
+            );
+            return React.createElement(
+              'View',
+              {
+                ...props,
+                ref,
+                style: [
+                  props.style,
+                  {
+                    backgroundColor: '#fff3cd',
+                    minHeight: 150,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: '#ffc107',
+                    borderStyle: 'dashed',
+                  },
+                ],
+              },
+              React.createElement(
+                'Text',
+                { style: { color: '#856404', textAlign: 'center' } },
+                'NavView (Config Error)\nUnable to verify native config'
+              )
+            );
+          });
+          componentLoadingStrategy = 'config-error-proxy';
+          componentRegistry.set('RCTNavView', RCTNavView);
+          isAlreadyRegistered = true; // Skip normal registration
         }
       } else {
         console.log(
@@ -153,25 +220,34 @@ try {
         isAlreadyRegistered = true;
         console.log('🔍 RCTNavView is already registered (detected via error)');
 
-        // Create a safe proxy component that doesn't try to register anything new
+        // Create a safe proxy component that indicates dual registration conflict
         const React = require('react');
         RCTNavView = React.forwardRef((props: any, ref: any) => {
-          // This should use the already-registered component somehow
-          // For now, create a placeholder that won't cause more registration conflicts
           console.warn('Using proxy component due to registration conflict');
-          return React.createElement('View', {
-            ...props,
-            ref,
-            style: [
-              props.style,
-              {
-                backgroundColor: '#d0d0d0',
-                minHeight: 150,
-                justifyContent: 'center',
-                alignItems: 'center',
-              },
-            ],
-          });
+          return React.createElement(
+            'View',
+            {
+              ...props,
+              ref,
+              style: [
+                props.style,
+                {
+                  backgroundColor: '#e6f3ff',
+                  minHeight: 150,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: '#007acc',
+                  borderStyle: 'dashed',
+                },
+              ],
+            },
+            React.createElement(
+              'Text',
+              { style: { color: '#005999', textAlign: 'center' } },
+              'NavView (Registration Conflict)\nDual registration detected'
+            )
+          );
         });
         componentLoadingStrategy = 'registration-conflict-proxy';
         componentRegistry.set('RCTNavView', RCTNavView);
@@ -181,6 +257,7 @@ try {
       } else {
         // Different error, component is not registered yet
         console.log('🔍 RCTNavView is not yet registered, safe to proceed');
+        console.log('🔍 Test error was:', String(testError));
       }
     }
 
