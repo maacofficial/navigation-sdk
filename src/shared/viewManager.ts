@@ -106,36 +106,49 @@ try {
     );
 
     if (isNewArchitecture) {
-      // For New Architecture, use requireNativeComponent directly for Fabric
-      // This ensures proper registration with the Fabric renderer
-      try {
-        RCTNavView = requireNativeComponent('RCTNavView');
-        componentLoadingStrategy = 'new-architecture-fabric';
-        console.log(
-          '✅ Using New Architecture Fabric component via requireNativeComponent'
-        );
-        componentRegistry.set('RCTNavView', RCTNavView);
-      } catch (newArchError) {
-        console.log(
-          '❌ New Architecture requireNativeComponent failed:',
-          String(newArchError)
-        );
-        // Try importing the codegen spec as fallback
+      // For New Architecture, try different approaches in order of preference
+      const attempts = [
+        {
+          name: 'codegen-component',
+          loader: () => require('../specs/RCTNavViewNativeComponent').default,
+        },
+        {
+          name: 'direct-component',
+          loader: () => require('../specs/RCTNavViewDirect').default,
+        },
+        {
+          name: 'require-native',
+          loader: () => requireNativeComponent('RCTNavView'),
+        },
+      ];
+
+      for (const attempt of attempts) {
         try {
-          const {
-            default: RCTNavViewFabric,
-          } = require('../specs/RCTNavViewNativeComponent');
-          RCTNavView = RCTNavViewFabric;
-          componentLoadingStrategy = 'new-architecture-codegen';
-          console.log('✅ Using New Architecture codegen component');
-          componentRegistry.set('RCTNavView', RCTNavView);
-        } catch (fallbackError) {
-          console.log(
-            '❌ New Architecture codegen fallback failed:',
-            String(fallbackError)
-          );
-          isNewArchitecture = false;
+          const component = attempt.loader();
+
+          // Verify it's a proper component
+          if (typeof component === 'function') {
+            RCTNavView = component;
+            componentLoadingStrategy = `new-architecture-${attempt.name}`;
+            console.log(`✅ Using New Architecture ${attempt.name}`);
+            componentRegistry.set('RCTNavView', RCTNavView);
+            break;
+          } else {
+            console.log(
+              `❌ ${attempt.name} returned type: ${typeof component}`
+            );
+          }
+        } catch (error) {
+          console.log(`❌ ${attempt.name} failed:`, String(error));
         }
+      }
+
+      // If all attempts failed, fall back to legacy
+      if (!RCTNavView || typeof RCTNavView !== 'function') {
+        console.log(
+          '❌ All New Architecture attempts failed, falling back to legacy'
+        );
+        isNewArchitecture = false;
       }
     }
 
